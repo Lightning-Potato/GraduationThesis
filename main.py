@@ -2,11 +2,15 @@
 # Date:
 
 from gomoku_engine import GomokuEngine
-from greedy_ai import GreedyAI
+from evaluator import GomokuEvaluator
+from minimax_ai import MinimaxAI
 
 def main():
     game = GomokuEngine()
-    ai = GreedyAI(game, player_id=2)  # AI 执白棋
+    evaluator = GomokuEvaluator(game)
+    # 初始化搜索深度为 2（深度每增加 1，计算量呈指数增长）
+    ai = MinimaxAI(game, evaluator, depth=2)
+
     current_player = 1  # 玩家 1（黑棋）先手
 
     while True:
@@ -16,7 +20,7 @@ def main():
             x, y = map(int, move.split(','))
         else:
             print("AI 正在思考...")
-            x, y = ai.get_best_move()
+            x, y = ai.get_best_move(current_player)
             print(f"AI 落子于: {x},{y}")
 
         if game.make_move(x, y, current_player):
