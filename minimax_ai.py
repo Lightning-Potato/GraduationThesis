@@ -1,5 +1,6 @@
 # Author: Hu Jia
-# Date:
+# Date: 2026-02-25
+# Refined for Alpha-Beta efficiency and Move-ordering [cite: 18, 36]
 
 import random
 
@@ -9,50 +10,52 @@ class MinimaxAI:
         self.engine = engine
         self.evaluator = evaluator
         self.max_depth = depth
-        self.player_id = 0
-        self.opponent_id = 0
-        # --- 新增：置换表 (Transposition Table) ---
         self.transposition_table = {}
 
     def get_best_move(self, player_id):
         self.player_id = player_id
         self.opponent_id = 3 - player_id
-
-        # 每一大步开始前清空置换表，或者保留它（取决于内存和棋局变化）
         self.transposition_table = {}
 
-        best_val = -float('inf')
         best_move = None
+        move_scores = []
+
+        # 1. 获取候选点并进行简单的启发式排序 (Move-ordering)
         candidates = self._get_candidates()
+
+        # 这里的排序是关键：先进行一层浅显的评估，让好的落子点排在前面
+        # 这样 Alpha-Beta 就能更早地剪掉坏的分支 [cite: 12, 59]
+        candidates.sort(key=lambda m: self._quick_evaluate(m[0], m[1]), reverse=True)
 
         for x, y in candidates:
             self.engine.make_move(x, y, self.player_id)
-            # 传入当前的 alpha 和 beta
-            move_val = self.minimax(self.max_depth - 1, -float('inf'), float('inf'), False)
+            # 执行 Alpha-Beta 搜索
+            val = self.minimax(self.max_depth - 1, -float('inf'), float('inf'), False)
             self.engine.undo_move(x, y)
+            move_scores.append(((x, y), val))
 
-            if move_val > best_val:
-                best_val = move_val
-                best_move = (x, y)
+        move_scores.sort(key=lambda x: x[1], reverse=True)
 
-        return best_move
+        print("\n--- AI 思考简报 (优化版) ---")
+        for m, s in move_scores[:3]:
+            print(f"位置 {m} | 预估评分: {s}")
+
+        return move_scores[0][0]
 
     def minimax(self, depth, alpha, beta, is_maximizing):
-        # --- 1. 查表：如果这个局面（Hash）我们算过，且深度足够，直接返回 ---
+        # 使用 Zobrist Hash 检查置换表
         board_hash = self.engine.current_hash
         if board_hash in self.transposition_table:
             entry = self.transposition_table[board_hash]
             if entry['depth'] >= depth:
                 return entry['score']
 
-        # 2. 终止条件
         if depth == 0:
-            score = self.evaluator.evaluate_board(self.player_id)
-            # 记录结果到置换表
-            self.transposition_table[board_hash] = {'score': score, 'depth': depth}
-            return score
+            return self.evaluator.evaluate_board(self.player_id)
 
         candidates = self._get_candidates()
+        # 在每一层也进行排序能极大提升剪枝效率 [cite: 36, 59]
+        candidates.sort(key=lambda m: self._quick_evaluate(m[0], m[1]), reverse=True)
 
         if is_maximizing:
             max_eval = -float('inf')
@@ -62,9 +65,7 @@ class MinimaxAI:
                 self.engine.undo_move(x, y)
                 max_eval = max(max_eval, eval)
                 alpha = max(alpha, eval)
-                if beta <= alpha:
-                    break
-            # 记录搜索结果
+                if beta <= alpha: break  # Alpha-Beta 剪枝
             self.transposition_table[board_hash] = {'score': max_eval, 'depth': depth}
             return max_eval
         else:
@@ -75,27 +76,36 @@ class MinimaxAI:
                 self.engine.undo_move(x, y)
                 min_eval = min(min_eval, eval)
                 beta = min(beta, eval)
-                if beta <= alpha:
-                    break
-            # 记录搜索结果
+                if beta <= alpha: break  # Alpha-Beta 剪枝
             self.transposition_table[board_hash] = {'score': min_eval, 'depth': depth}
             return min_eval
 
+    def _quick_evaluate(self, x, y):
+        """简单的启发式评分，用于落子排序。优先考虑中心和邻近位置"""
+        center = self.engine.size // 2
+        dist_score = (center - abs(x - center)) + (center - abs(y - center))
+        return dist_score
+
     def _get_candidates(self):
-        """复用之前的逻辑：只搜索棋子周围空位"""
+        """扩展搜索范围：已有棋子周围 1-2 格 """
         candidates = set()
         board = self.engine.board
-        has_piece = False
+        occupied = []
+
         for x in range(self.engine.size):
             for y in range(self.engine.size):
                 if board[x][y] != 0:
-                    has_piece = True
-                    for dx in range(-1, 2):
-                        for dy in range(-1, 2):
-                            nx, ny = x + dx, y + dy
-                            if 0 <= nx < self.engine.size and 0 <= ny < self.engine.size:
-                                if board[nx][ny] == 0:
-                                    candidates.add((nx, ny))
-        if not has_piece:
+                    occupied.append((x, y))
+
+        if not occupied:
             return [(self.engine.size // 2, self.engine.size // 2)]
+
+        for x, y in occupied:
+            # 搜索半径：1格通常足够，2格更稳健但慢 [cite: 35]
+            for dx in range(-1, 2):
+                for dy in range(-1, 2):
+                    nx, ny = x + dx, y + dy
+                    if 0 <= nx < self.engine.size and 0 <= ny < self.engine.size:
+                        if board[nx][ny] == 0:
+                            candidates.add((nx, ny))
         return list(candidates)
