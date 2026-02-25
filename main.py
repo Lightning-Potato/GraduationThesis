@@ -9,7 +9,7 @@ def main():
     game = GomokuEngine()
     evaluator = GomokuEvaluator(game)
     # 初始化搜索深度为 2（深度每增加 1，计算量呈指数增长）
-    ai = MinimaxAI(game, evaluator, depth=2)
+    ai = MinimaxAI(game, evaluator, depth=4)
 
     current_player = 1  # 玩家 1（黑棋）先手
 
