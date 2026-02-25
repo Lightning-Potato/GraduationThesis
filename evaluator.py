@@ -1,21 +1,16 @@
-# Author: Hu Jia
-# Date:
-
 import numpy as np
 
-
-# 分值表：反映了不同棋型的战略价值
+# 关键：大幅拉开分值。让“活三”的分数远高于“死二”，迫使 AI 追求进攻。
 SCORES = {
-    'FIVE': 100000,      # 连五：游戏结束
-    'ALIVE_FOUR': 10000,  # 活四：对手若不堵即死，我方若有即胜
-    'DEAD_FOUR': 1000,    # 冲四：有一定威胁，但容易防守
-    'ALIVE_THREE': 1000,  # 活三：非常强力，能衍生出活四
-    'DEAD_THREE': 100,    # 死三：普通进攻
-    'ALIVE_TWO': 100,     # 活二：基础潜力
-    'DEAD_TWO': 10,       # 死二：微弱潜力
+    'FIVE': 1000000,
+    'ALIVE_FOUR': 100000,
+    'DEAD_FOUR': 10000,
+    'ALIVE_THREE': 8000,   # 进一步调高，确保它能压过位置分
+    'DEAD_THREE': 1000,
+    'ALIVE_TWO': 500,      # 活二适中
+    'DEAD_TWO': 100,
 }
 
-# 定义匹配模式 (1代表当前玩家，0代表空位)
 PATTERNS = {
     'FIVE': ['11111'],
     'ALIVE_FOUR': ['011110'],
@@ -33,14 +28,13 @@ class GomokuEvaluator:
         self.size = engine.size
 
     def evaluate_board(self, player):
-        """
-        评估整个棋盘对指定 player 的分数。
-        总分 = 己方棋型分值 - 敌方棋型分值 * 1.2 (略微侧重防守)
-        """
         opponent = 3 - player
         my_score = self.count_board_score(player)
         opp_score = self.count_board_score(opponent)
-        return my_score - int(opp_score * 1.2)
+
+        # 进攻权重 1.0，防守权重 0.8。只有当你快赢了，AI 才会拼命挡你。
+        # 否则，它会优先发展自己的连子。
+        return int(my_score - opp_score * 0.8)
 
     def count_board_score(self, player):
         score = 0
@@ -49,10 +43,18 @@ class GomokuEvaluator:
         opp_char = str(3 - player)
 
         for line in lines:
-            # 将数字列表转为字符串，并根据当前玩家标准化
-            # 把己方换成'1'，对方换成'2'，空位换成'0'
-            line_str = "".join(map(str, line)).replace(player_char, '1').replace(opp_char, '2')
+            # 关键修正：确保转换逻辑无误
+            # 我们要把“当前分析的玩家”统一替换为 '1'，对手替换为 '2'
+            line_str = "".join(map(str, line))
+
+            # 如果 player 是 2 (白棋)，那么要把 2 换成 1，把 1 换成 2
+            if player == 2:
+                line_str = line_str.replace('2', 'T').replace('1', '2').replace('T', '1')
+            # 如果 player 是 1 (黑棋)，保持不变（因为模式库里 1 就是己方）
+
             score += self._score_line(line_str)
+
+        score += self._get_position_bonus(player)
         return score
 
     def _score_line(self, line_str):
@@ -60,25 +62,25 @@ class GomokuEvaluator:
         for pattern_name, patterns in PATTERNS.items():
             for p in patterns:
                 count = line_str.count(p)
-                if count > 0:
-                    line_score += count * SCORES[pattern_name]
+                line_score += count * SCORES[pattern_name]
         return line_score
 
+    def _get_position_bonus(self, player):
+        bonus = 0
+        center = self.size // 2
+        for x in range(self.size):
+            for y in range(self.size):
+                if self.engine.board[x][y] == player:
+                    # 距离中心越近，加分越多
+                    bonus += (center - abs(x - center)) + (center - abs(y - center))
+        return bonus
+
     def _get_all_lines(self):
-        """提取棋盘所有可能的行、列、对角线"""
         lines = []
         board = self.engine.board
-
-        # 行
-        for row in board:
-            lines.append(row.tolist())
-        # 列
-        for col in board.T:
-            lines.append(col.tolist())
-        # 对角线 (右上到左下，左上到右下)
+        for row in board: lines.append(row.tolist())
+        for col in board.T: lines.append(col.tolist())
         for i in range(-self.size + 1, self.size):
             lines.append(board.diagonal(i).tolist())
             lines.append(np.fliplr(board).diagonal(i).tolist())
-
-        # 只保留长度大于等于5的线
         return [l for l in lines if len(l) >= 5]
