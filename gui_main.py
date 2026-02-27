@@ -3,99 +3,169 @@
 
 import pygame
 import sys
-# 导入你之前的逻辑文件
 from gomoku_engine import GomokuEngine
 from minimax_ai import MinimaxAI
 from evaluator import GomokuEvaluator
 
-# 配置参数
+# ================== 配置参数 ==================
 BOARD_SIZE = 15
-GRID_SIZE = 40  # 每个格子的像素大小
-MARGIN = 40  # 棋盘边缘留白
+GRID_SIZE = 40
+MARGIN = 40
+BOTTOM_PANEL = 80
 SCREEN_SIZE = GRID_SIZE * (BOARD_SIZE - 1) + MARGIN * 2
+WINDOW_HEIGHT = SCREEN_SIZE + BOTTOM_PANEL
 
-# 颜色定义
-BOARD_COLOR = (235, 185, 120)  # 经典木质棋盘色
+BOARD_COLOR = (235, 185, 120)
 BLACK = (30, 30, 30)
 WHITE = (245, 245, 245)
+TEXT_COLOR = (20, 20, 20)
+BUTTON_COLOR = (200, 160, 100)
+BUTTON_HOVER = (220, 180, 120)
 
 
 class GomokuGUI:
     def __init__(self):
         pygame.init()
-        self.screen = pygame.display.set_mode((SCREEN_SIZE, SCREEN_SIZE))
+        self.screen = pygame.display.set_mode((SCREEN_SIZE, WINDOW_HEIGHT))
         pygame.display.set_caption("毕业设计：五子棋 AI 对战演示")
 
-        # 初始化后端逻辑
+        self.font = pygame.font.SysFont("simhei", 22)
+
+        # 按钮区域
+        self.restart_btn = pygame.Rect(SCREEN_SIZE - 240, SCREEN_SIZE + 20, 100, 40)
+        self.undo_btn = pygame.Rect(SCREEN_SIZE - 120, SCREEN_SIZE + 20, 100, 40)
+
+        self.init_game()
+
+    # ================== 初始化游戏 ==================
+    def init_game(self):
         self.engine = GomokuEngine(size=BOARD_SIZE)
         self.evaluator = GomokuEvaluator(self.engine)
-        self.ai = MinimaxAI(self.engine, self.evaluator, depth=3)  # 先用3层测试
+        self.ai = MinimaxAI(self.engine, self.evaluator, depth=3)
 
         self.game_over = False
+        self.status_text = "你的回合（黑棋）"
+        self.move_history = []
 
+    # ================== 重新对局 ==================
+    def restart_game(self):
+        self.init_game()
+
+    # ================== 悔棋 ==================
+    def undo_move(self):
+        if len(self.move_history) >= 2:
+            r, c = self.move_history.pop()
+            self.engine.board[r][c] = 0
+            r, c = self.move_history.pop()
+            self.engine.board[r][c] = 0
+
+            self.game_over = False
+            self.status_text = "已悔棋，你的回合（黑棋）"
+
+    # ================== 画棋盘 ==================
     def draw_board(self):
         self.screen.fill(BOARD_COLOR)
-        # 画直线
+
         for i in range(BOARD_SIZE):
-            # 横线
             pygame.draw.line(self.screen, BLACK,
                              (MARGIN, MARGIN + i * GRID_SIZE),
                              (SCREEN_SIZE - MARGIN, MARGIN + i * GRID_SIZE), 1)
-            # 竖线
+
             pygame.draw.line(self.screen, BLACK,
                              (MARGIN + i * GRID_SIZE, MARGIN),
                              (MARGIN + i * GRID_SIZE, SCREEN_SIZE - MARGIN), 1)
 
-        # 画天元和星位 (15x15 棋盘的常用参考点)
+        # 星位
         for pts in [(3, 3), (3, 11), (11, 3), (11, 11), (7, 7)]:
             pygame.draw.circle(self.screen, BLACK,
-                               (MARGIN + pts[0] * GRID_SIZE, MARGIN + pts[1] * GRID_SIZE), 4)
+                               (MARGIN + pts[0] * GRID_SIZE,
+                                MARGIN + pts[1] * GRID_SIZE), 4)
 
+    # ================== 画棋子 ==================
     def draw_pieces(self):
         for r in range(BOARD_SIZE):
             for c in range(BOARD_SIZE):
                 piece = self.engine.board[r][c]
                 if piece != 0:
                     color = BLACK if piece == 1 else WHITE
-                    pos = (MARGIN + c * GRID_SIZE, MARGIN + r * GRID_SIZE)
-                    pygame.draw.circle(self.screen, color, pos, GRID_SIZE // 2 - 2)
+                    pos = (MARGIN + c * GRID_SIZE,
+                           MARGIN + r * GRID_SIZE)
+                    pygame.draw.circle(
+                        self.screen, color, pos,
+                        GRID_SIZE // 2 - 2
+                    )
 
+    # ================== 画按钮 ==================
+    def draw_buttons(self):
+        mouse_pos = pygame.mouse.get_pos()
+
+        for rect, text in [(self.restart_btn, "重新开始"),
+                           (self.undo_btn, "悔棋")]:
+
+            color = BUTTON_HOVER if rect.collidepoint(mouse_pos) else BUTTON_COLOR
+            pygame.draw.rect(self.screen, color, rect)
+            pygame.draw.rect(self.screen, BLACK, rect, 2)
+
+            text_surface = self.font.render(text, True, TEXT_COLOR)
+            text_rect = text_surface.get_rect(center=rect.center)
+            self.screen.blit(text_surface, text_rect)
+
+    # ================== 状态栏 ==================
+    def draw_status(self):
+        panel_rect = pygame.Rect(0, SCREEN_SIZE, SCREEN_SIZE, BOTTOM_PANEL)
+        pygame.draw.rect(self.screen, (210, 170, 110), panel_rect)
+
+        text_surface = self.font.render(self.status_text, True, TEXT_COLOR)
+        self.screen.blit(text_surface, (20, SCREEN_SIZE + 25))
+
+    # ================== 玩家落子 ==================
     def handle_click(self, pos):
-        if self.game_over: return
+        if self.game_over:
+            return False
 
-        # 将像素坐标转为棋盘索引
         x, y = pos
+        if y > SCREEN_SIZE:
+            return False
+
         col = round((x - MARGIN) / GRID_SIZE)
         row = round((y - MARGIN) / GRID_SIZE)
 
         if 0 <= row < BOARD_SIZE and 0 <= col < BOARD_SIZE:
-            if self.engine.make_move(row, col, 1):  # 玩家是 1 (黑棋)
+            if self.engine.make_move(row, col, 1):
+                self.move_history.append((row, col))
+
                 if self.engine.check_win(row, col, 1):
-                    print("恭喜！你赢了！")
+                    self.status_text = "恭喜你赢了！"
                     self.game_over = True
+                else:
+                    self.status_text = "AI 正在思考..."
                 return True
         return False
 
+    # ================== AI回合 ==================
     def ai_turn(self):
-        if self.game_over: return
-        print("AI 正在思考...")
-        # 刷新界面显示“AI正在思考”的状态
-        pygame.display.set_caption("AI 正在思考中...")
+        if self.game_over:
+            return
 
-        move = self.ai.get_best_move(2)  # AI 是 2 (白棋)
+        move = self.ai.get_best_move(2)
         if move:
             r, c = move
             self.engine.make_move(r, c, 2)
+            self.move_history.append((r, c))
+
             if self.engine.check_win(r, c, 2):
-                print("AI 赢了！再接再厉。")
+                self.status_text = "AI 赢了！"
                 self.game_over = True
+            else:
+                self.status_text = "你的回合（黑棋）"
 
-        pygame.display.set_caption("毕业设计：五子棋 AI 对战演示")
-
+    # ================== 主循环 ==================
     def run(self):
         while True:
             self.draw_board()
             self.draw_pieces()
+            self.draw_status()
+            self.draw_buttons()
             pygame.display.flip()
 
             for event in pygame.event.get():
@@ -103,13 +173,23 @@ class GomokuGUI:
                     pygame.quit()
                     sys.exit()
 
-                if event.type == pygame.MOUSEBUTTONDOWN and not self.game_over:
-                    if self.handle_click(event.pos):
-                        # 玩家下完后立即刷新棋盘，再让 AI 走
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    mouse_pos = event.pos
+
+                    # 点击按钮
+                    if self.restart_btn.collidepoint(mouse_pos):
+                        self.restart_game()
+
+                    elif self.undo_btn.collidepoint(mouse_pos):
+                        self.undo_move()
+
+                    # 点击棋盘
+                    elif self.handle_click(mouse_pos):
                         self.draw_board()
                         self.draw_pieces()
+                        self.draw_status()
+                        self.draw_buttons()
                         pygame.display.flip()
-
                         self.ai_turn()
 
 
