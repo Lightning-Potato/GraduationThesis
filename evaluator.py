@@ -1,24 +1,14 @@
 import numpy as np
 
-# 关键：大幅拉开分值。让“活三”的分数远高于“死二”，迫使 AI 追求进攻。
+# 分值层级：采用10倍差额，确保高阶棋型具有绝对统治力
 SCORES = {
-    'FIVE': 1000000,
-    'ALIVE_FOUR': 100000,
-    'DEAD_FOUR': 10000,
-    'ALIVE_THREE': 8000,   # 进一步调高，确保它能压过位置分
-    'DEAD_THREE': 1000,
-    'ALIVE_TWO': 500,      # 活二适中
-    'DEAD_TWO': 100,
-}
-
-PATTERNS = {
-    'FIVE': ['11111'],
-    'ALIVE_FOUR': ['011110'],
-    'DEAD_FOUR': ['211110', '011112', '11101', '10111', '11011'],
-    'ALIVE_THREE': ['01110', '011010', '010110'],
-    'DEAD_THREE': ['001112', '211100', '010112', '211010', '210110', '011012', '11001', '10011', '10101'],
-    'ALIVE_TWO': ['001100', '01010', '010010'],
-    'DEAD_TWO': ['000112', '211000', '001012', '210100']
+    'FIVE': 100000000,  # 连五：1亿
+    'ALIVE_FOUR': 10000000,  # 活四：1000万
+    'DEAD_FOUR': 1000000,  # 冲四：100万
+    'ALIVE_THREE': 100000,  # 活三：10万
+    'DEAD_THREE': 10000,  # 眠三：1万
+    'ALIVE_TWO': 1000,  # 活二
+    'DEAD_TWO': 100,  # 眠二
 }
 
 
@@ -29,40 +19,54 @@ class GomokuEvaluator:
 
     def evaluate_board(self, player):
         opponent = 3 - player
+        # 计算攻防平衡：适当提高对手分数的权重（1.2倍），使AI更倾向于防守
         my_score = self.count_board_score(player)
         opp_score = self.count_board_score(opponent)
 
-        # 进攻权重 1.0，防守权重 0.8。只有当你快赢了，AI 才会拼命挡你。
-        # 否则，它会优先发展自己的连子。
-        return int(my_score - opp_score * 0.8)
+        # 核心：不再使用 if opp_score > XXX return 这种截断逻辑
+        # 这样 AI 才能通过对比 my_score - opp_score 的差值，选出那个能让对方分数减小最多的点（即堵截点）
+        return int(my_score - opp_score * 1.2)
 
     def count_board_score(self, player):
         score = 0
         lines = self._get_all_lines()
-        player_char = str(player)
-        opp_char = str(3 - player)
 
         for line in lines:
-            # 关键修正：确保转换逻辑无误
-            # 我们要把“当前分析的玩家”统一替换为 '1'，对手替换为 '2'
             line_str = "".join(map(str, line))
-
-            # 如果 player 是 2 (白棋)，那么要把 2 换成 1，把 1 换成 2
+            # 统一视角：将当前评估者视为 '1'
             if player == 2:
-                line_str = line_str.replace('2', 'T').replace('1', '2').replace('T', '1')
-            # 如果 player 是 1 (黑棋)，保持不变（因为模式库里 1 就是己方）
+                line_str = line_str.replace('1', 'X').replace('2', '1').replace('X', '2')
 
             score += self._score_line(line_str)
 
+        # 加入微量的位置分（中心加分），作为棋型相同时的“破局”依据
         score += self._get_position_bonus(player)
         return score
 
     def _score_line(self, line_str):
         line_score = 0
-        for pattern_name, patterns in PATTERNS.items():
-            for p in patterns:
-                count = line_str.count(p)
-                line_score += count * SCORES[pattern_name]
+
+        # 1. 连五判断
+        if '11111' in line_str:
+            return SCORES['FIVE']
+
+        # 2. 活四 (011110)
+        if '011110' in line_str:
+            line_score += SCORES['ALIVE_FOUR']
+
+        # 3. 冲四：精细化匹配所有变体 (11110, 01111, 10111, 11011, 11101)
+        # 这解决了跳冲四不堵的问题
+        for p in ['11110', '01111', '10111', '11011', '11101']:
+            if p in line_str:
+                line_score += SCORES['DEAD_FOUR']
+                break  # 同一线段高阶优先
+
+        # 4. 活三
+        for p in ['01110', '011010', '010110']:
+            if p in line_str:
+                line_score += SCORES['ALIVE_THREE']
+                break
+
         return line_score
 
     def _get_position_bonus(self, player):
@@ -71,7 +75,7 @@ class GomokuEvaluator:
         for x in range(self.size):
             for y in range(self.size):
                 if self.engine.board[x][y] == player:
-                    # 距离中心越近，加分越多
+                    # 分值控制在个位数，不干扰大局评分
                     bonus += (center - abs(x - center)) + (center - abs(y - center))
         return bonus
 
