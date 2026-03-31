@@ -6,21 +6,22 @@ import sys
 from gomoku_engine import GomokuEngine
 from minimax_ai import MinimaxAI
 from evaluator import GomokuEvaluator
+import config
 
 # ================== 配置参数 ==================
-BOARD_SIZE = 15
-GRID_SIZE = 40
-MARGIN = 40
-BOTTOM_PANEL = 80
-SCREEN_SIZE = GRID_SIZE * (BOARD_SIZE - 1) + MARGIN * 2
-WINDOW_HEIGHT = SCREEN_SIZE + BOTTOM_PANEL
+BOARD_SIZE = config.BOARD_SIZE
+GRID_SIZE = config.GRID_SIZE
+MARGIN = config.MARGIN
+BOTTOM_PANEL = config.BOTTOM_PANEL
+SCREEN_SIZE = config.SCREEN_SIZE
+WINDOW_HEIGHT = config.WINDOW_HEIGHT
 
-BOARD_COLOR = (235, 185, 120)
-BLACK = (30, 30, 30)
-WHITE = (245, 245, 245)
-TEXT_COLOR = (20, 20, 20)
-BUTTON_COLOR = (200, 160, 100)
-BUTTON_HOVER = (220, 180, 120)
+BOARD_COLOR = config.COLORS['BACKGROUND']
+BLACK = config.COLORS['BLACK']
+WHITE = config.COLORS['WHITE']
+TEXT_COLOR = config.COLORS['TEXT_COLOR']
+BUTTON_COLOR = config.COLORS['BUTTON_COLOR']
+BUTTON_HOVER = config.COLORS['BUTTON_HOVER']
 
 
 class GomokuGUI:

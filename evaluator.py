@@ -1,15 +1,8 @@
 import numpy as np
+import config
 
 # 分值层级：定义棋型的核心价值
-SCORES = {
-    'FIVE': 100000000,
-    'ALIVE_FOUR': 10000000,
-    'DEAD_FOUR': 1000000,
-    'ALIVE_THREE': 100000,
-    'DEAD_THREE': 10000,
-    'ALIVE_TWO': 1000,
-    'DEAD_TWO': 100,
-}
+SCORES = config.BOARD_SCORES
 
 
 class GomokuEvaluator:

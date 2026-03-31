@@ -1,5 +1,6 @@
 import time
 import numpy as np
+import config
 
 # 置换表状态标记
 EXACT = 0
@@ -8,12 +9,12 @@ UPPERBOUND = 2
 
 
 class MinimaxAI:
-    def __init__(self, engine, evaluator, depth=6):
+    def __init__(self, engine, evaluator, depth=config.AI_CONFIG['MAX_DEPTH'],):
         self.engine = engine
         self.evaluator = evaluator
         self.max_depth = depth
         self.transposition_table = {}
-        self.time_limit = 10.0  # 最大思考时间限制
+        self.time_limit = config.AI_CONFIG['TIME_LIMIT']  # 最大思考时间限制
         self.start_time = 0
 
     def get_best_move(self, player_id):
@@ -28,7 +29,7 @@ class MinimaxAI:
         self.start_time = time.time()
 
         # 定期清理置换表防止内存溢出
-        if len(self.transposition_table) > 400000:
+        if len(self.transposition_table) > config.AI_CONFIG['TT_SIZE_LIMIT']:
             self.transposition_table.clear()
 
         best_move = None
@@ -43,7 +44,7 @@ class MinimaxAI:
                     last_completed_depth = current_depth
 
                 # 必胜剪枝：一旦发现必胜路径则停止加深搜索
-                if score >= 10000000: break
+                if score >= config.BOARD_SCORES['ALIVE_FOUR']: break
 
                 # 时间预警：如果已经消耗 80% 时间，则不开启下一层深度
                 if time.time() - self.start_time > self.time_limit * 0.8: break
