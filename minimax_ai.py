@@ -18,14 +18,14 @@ class MinimaxAI:
     def get_best_move(self, player_id):
         self.player_id = player_id
         self.opponent_id = 3 - player_id
+
+        # 1. 开局库优化：如果是第一手棋，直接走中心
+        # 使用 numpy 快速检查棋盘是否全空
+        import numpy as np
+        if np.sum(self.engine.board != 0) == 0:
+            return (self.engine.size // 2, self.engine.size // 2)
+
         self.start_time = time.time()
-
-        # 内存管理：防止置换表过大
-        if len(self.transposition_table) > 400000:
-            self.transposition_table.clear()
-
-        best_move = None
-        last_completed_depth = 0
 
         # --- 迭代加深 ---
         for current_depth in range(1, self.max_depth + 1):

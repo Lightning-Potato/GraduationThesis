@@ -18,20 +18,31 @@ class GomokuEvaluator:
         self.size = engine.size
 
     def quick_point_score(self, x, y, player):
-        """针对单个落子点进行快速评估，用于搜索排序"""
+        """针对单个落子点进行超快速评估，放弃字符串拼接以提升性能"""
         score = 0
         opponent = 3 - player
         directions = [(1, 0), (0, 1), (1, 1), (1, -1)]
 
+        # 直接使用数值比较，避免字符串操作
         for dx, dy in directions:
-            # 获取该点在四个方向上的局部棋型字符串（前后各4格）
-            line_str_me = self._get_local_line(x, y, dx, dy, player)
-            line_str_opp = self._get_local_line(x, y, dx, dy, opponent)
+            my_count = 0
+            opp_count = 0
+            # 仅检查周围较小范围（如半径3），足以辅助排序
+            for i in range(-3, 4):
+                if i == 0: continue
+                nx, ny = x + i * dx, y + i * dy
+                if 0 <= nx < self.size and 0 <= ny < self.size:
+                    cell = self.engine.board[nx][ny]
+                    if cell == player: my_count += 1
+                    elif cell == opponent: opp_count += 1
 
-            # 累加得分：自己的进攻分 + 对手的防御分（防止对手成型）
-            score += self._evaluate_line(line_str_me)
-            score += self._evaluate_line(line_str_opp) * 1.1  # 稍微偏重防御
+            # 简单的分值叠加逻辑
+            score += my_count * 10  # 进攻潜力
+            score += opp_count * 15 # 拦截潜力（防守权重略高）
 
+        # 加上基础的位置分，让 AI 倾向于中心
+        center = self.size // 2
+        score += (center - abs(x - center)) + (center - abs(y - center))
         return score
 
     def _get_local_line(self, x, y, dx, dy, player):
