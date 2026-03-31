@@ -17,6 +17,43 @@ class GomokuEvaluator:
         self.engine = engine
         self.size = engine.size
 
+    def quick_point_score(self, x, y, player):
+        """针对单个落子点进行快速评估，用于搜索排序"""
+        score = 0
+        opponent = 3 - player
+        directions = [(1, 0), (0, 1), (1, 1), (1, -1)]
+
+        for dx, dy in directions:
+            # 获取该点在四个方向上的局部棋型字符串（前后各4格）
+            line_str_me = self._get_local_line(x, y, dx, dy, player)
+            line_str_opp = self._get_local_line(x, y, dx, dy, opponent)
+
+            # 累加得分：自己的进攻分 + 对手的防御分（防止对手成型）
+            score += self._evaluate_line(line_str_me)
+            score += self._evaluate_line(line_str_opp) * 1.1  # 稍微偏重防御
+
+        return score
+
+    def _get_local_line(self, x, y, dx, dy, player):
+        """获取局部线段字符串"""
+        line = []
+        for i in range(-4, 5):
+            if i == 0:
+                line.append('1')  # 假设落子
+                continue
+            nx, ny = x + i * dx, y + i * dy
+            if 0 <= nx < self.size and 0 <= ny < self.size:
+                cell = self.engine.board[nx][ny]
+                if cell == player:
+                    line.append('1')
+                elif cell == 0:
+                    line.append('0')
+                else:
+                    line.append('2')  # 对手棋子
+            else:
+                line.append('2')  # 边界视为对手棋子
+        return "".join(line)
+
     def evaluate_board(self, player):
         opponent = 3 - player
         # 计算攻防平衡：适当提高对手分数的权重（1.2倍），使AI更倾向于防守

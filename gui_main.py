@@ -47,6 +47,10 @@ class GomokuGUI:
         self.status_text = "你的回合（黑棋）"
         self.move_history = []
 
+        # ⭐ 新增：回合控制 + AI锁
+        self.current_player = 1  # 1=玩家, 2=AI
+        self.ai_thinking = False
+
     # ================== 重新对局 ==================
     def restart_game(self):
         self.init_game()
@@ -54,12 +58,15 @@ class GomokuGUI:
     # ================== 悔棋 ==================
     def undo_move(self):
         if len(self.move_history) >= 2:
+            # 用 undo_move 保证哈希正确
             r, c = self.move_history.pop()
-            self.engine.board[r][c] = 0
+            self.engine.undo_move(r, c)
+
             r, c = self.move_history.pop()
-            self.engine.board[r][c] = 0
+            self.engine.undo_move(r, c)
 
             self.game_over = False
+            self.current_player = 1
             self.status_text = "已悔棋，你的回合（黑棋）"
 
     # ================== 画棋盘 ==================
@@ -75,7 +82,6 @@ class GomokuGUI:
                              (MARGIN + i * GRID_SIZE, MARGIN),
                              (MARGIN + i * GRID_SIZE, SCREEN_SIZE - MARGIN), 1)
 
-        # 星位
         for pts in [(3, 3), (3, 11), (11, 3), (11, 11), (7, 7)]:
             pygame.draw.circle(self.screen, BLACK,
                                (MARGIN + pts[0] * GRID_SIZE,
@@ -120,7 +126,8 @@ class GomokuGUI:
 
     # ================== 玩家落子 ==================
     def handle_click(self, pos):
-        if self.game_over:
+        # ⭐ 关键限制（防止AI期间操作）
+        if self.game_over or self.current_player != 1 or self.ai_thinking:
             return False
 
         x, y = pos
@@ -139,13 +146,17 @@ class GomokuGUI:
                     self.game_over = True
                 else:
                     self.status_text = "AI 正在思考..."
+                    self.current_player = 2  # ⭐ 切换到AI
                 return True
         return False
 
     # ================== AI回合 ==================
     def ai_turn(self):
-        if self.game_over:
+        # ⭐ 防止重复调用
+        if self.game_over or self.current_player != 2 or self.ai_thinking:
             return
+
+        self.ai_thinking = True
 
         move = self.ai.get_best_move(2)
         if move:
@@ -158,6 +169,9 @@ class GomokuGUI:
                 self.game_over = True
             else:
                 self.status_text = "你的回合（黑棋）"
+                self.current_player = 1  # ⭐ 切回玩家
+
+        self.ai_thinking = False
 
     # ================== 主循环 ==================
     def run(self):
@@ -176,21 +190,22 @@ class GomokuGUI:
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     mouse_pos = event.pos
 
-                    # 点击按钮
                     if self.restart_btn.collidepoint(mouse_pos):
                         self.restart_game()
 
                     elif self.undo_btn.collidepoint(mouse_pos):
                         self.undo_move()
 
-                    # 点击棋盘
                     elif self.handle_click(mouse_pos):
                         self.draw_board()
                         self.draw_pieces()
                         self.draw_status()
                         self.draw_buttons()
                         pygame.display.flip()
-                        self.ai_turn()
+
+                        # ⭐ 只在正确状态触发AI
+                        if self.current_player == 2:
+                            self.ai_turn()
 
 
 if __name__ == "__main__":
