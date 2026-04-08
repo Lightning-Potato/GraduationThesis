@@ -204,7 +204,7 @@ class GomokuGUI:
                         self.draw_buttons()
                         pygame.display.flip()
 
-                        # ⭐ 只在正确状态触发AI
+                        # 只在正确状态触发AI
                         if self.current_player == 2:
                             self.ai_turn()
 

@@ -31,7 +31,7 @@ COLORS = {
 # --- AI 引擎参数 ---
 AI_CONFIG = {
     'MAX_DEPTH': 6,                 # 搜索深度限制
-    'TIME_LIMIT': 10.0,             # AI 思考限时（秒）
+    'TIME_LIMIT': 5.0,             # AI 思考限时（秒）
     'TT_SIZE_LIMIT': 400000,        # 置换表条目上限
 }
 

@@ -17,6 +17,12 @@ class MinimaxAI:
         self.time_limit = config.AI_CONFIG['TIME_LIMIT']  # 最大思考时间限制
         self.start_time = 0
 
+        '记录相关指标'
+        self.nodes_visited = 0  # 累计访问节点数
+        self.tt_hits = 0  # 置换表命中次数
+        self.cutoffs = 0  # 剪枝发生次数
+        self.search_history = []  # 用于记录每一步的详细数据
+
     def get_best_move(self, player_id):
         self.player_id = player_id
         self.opponent_id = 3 - player_id
@@ -82,6 +88,9 @@ class MinimaxAI:
         return best_pos, best_val
 
     def minimax(self, depth, alpha, beta, is_maximizing):
+
+        self.nodes_visited += 1  # 每次进入递归，计数+1
+
         """带 Alpha-Beta 剪枝的 Minimax 递归"""
         if time.time() - self.start_time > self.time_limit:
             raise TimeoutError
@@ -91,6 +100,9 @@ class MinimaxAI:
         if board_hash in self.transposition_table:
             entry = self.transposition_table[board_hash]
             if entry['depth'] >= depth:
+
+                self.tt_hits += 1  # 计数命中
+
                 if entry['type'] == EXACT: return entry['score']
                 if entry['type'] == LOWERBOUND: alpha = max(alpha, entry['score'])
                 if entry['type'] == UPPERBOUND: beta = min(beta, entry['score'])
@@ -123,6 +135,9 @@ class MinimaxAI:
                 self.engine.undo_move(x, y)
 
             if beta <= alpha:
+
+                self.cutoffs += 1  # 计数剪枝
+
                 break
 
         self._save_tt(board_hash, best_score, depth, original_alpha, beta)
