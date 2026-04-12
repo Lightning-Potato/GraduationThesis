@@ -84,6 +84,10 @@ class GomokuGUI:
         self.move_history = []
         self.current_player = 1
 
+        # 测试是否真的修改了难度
+        # print("当前难度:", self.difficulty)
+        # print("AI深度:", depth)
+
     # ================== 菜单 ==================
     def draw_menu(self):
         self.screen.fill(BOARD_COLOR)
@@ -199,14 +203,25 @@ class GomokuGUI:
         self.screen.blit(self.font.render("返回主页", True, TEXT_COLOR),
                          (self.home_btn.x + 10, self.home_btn.y + 8))
 
+        # ⭐ 返回游戏按钮
+        self.back_game_btn = pygame.Rect(rect.x + 80, rect.y + 110, 140, 40)
+        pygame.draw.rect(self.screen, BUTTON_COLOR, self.back_game_btn)
+        self.screen.blit(self.font.render("返回游戏", True, TEXT_COLOR),
+                         (self.back_game_btn.x + 10, self.back_game_btn.y + 8))
+
         # 难度按钮
         self.easy_btn = pygame.Rect(rect.x + 20, rect.y + 140, 80, 40)
         self.mid_btn = pygame.Rect(rect.x + 110, rect.y + 140, 80, 40)
         self.hard_btn = pygame.Rect(rect.x + 200, rect.y + 140, 80, 40)
 
-        pygame.draw.rect(self.screen, BUTTON_COLOR, self.easy_btn)
-        pygame.draw.rect(self.screen, BUTTON_COLOR, self.mid_btn)
-        pygame.draw.rect(self.screen, BUTTON_COLOR, self.hard_btn)
+        # ⭐ 根据当前难度决定颜色
+        easy_color = BUTTON_HOVER if self.difficulty == "easy" else BUTTON_COLOR
+        mid_color = BUTTON_HOVER if self.difficulty == "medium" else BUTTON_COLOR
+        hard_color = BUTTON_HOVER if self.difficulty == "hard" else BUTTON_COLOR
+
+        pygame.draw.rect(self.screen, easy_color, self.easy_btn)
+        pygame.draw.rect(self.screen, mid_color, self.mid_btn)
+        pygame.draw.rect(self.screen, hard_color, self.hard_btn)
 
         self.screen.blit(self.font.render("简单", True, TEXT_COLOR), (self.easy_btn.x + 10, self.easy_btn.y + 8))
         self.screen.blit(self.font.render("中等", True, TEXT_COLOR), (self.mid_btn.x + 10, self.mid_btn.y + 8))
@@ -294,10 +309,12 @@ class GomokuGUI:
                     if event.type == pygame.MOUSEBUTTONDOWN:
                         if self.pvp_btn.collidepoint(event.pos):
                             self.mode = "pvp"
+                            self.input_text = ""  # ⭐ 清空输入
                             self.state = "input"
 
                         elif self.pve_btn.collidepoint(event.pos):
                             self.mode = "pve"
+                            self.input_text = ""  # ⭐ 清空输入
                             self.state = "input"
 
                 elif self.state == "input":
@@ -336,12 +353,18 @@ class GomokuGUI:
                                 self.score_p2 = 0
                                 self.init_game()
 
+                            elif self.back_game_btn.collidepoint(event.pos):
+                                self.show_settings = False
+
                             elif self.easy_btn.collidepoint(event.pos):
                                 self.difficulty = "easy"
+                                self.init_game()  # ⭐ 重新创建AI
                             elif self.mid_btn.collidepoint(event.pos):
                                 self.difficulty = "medium"
+                                self.init_game()
                             elif self.hard_btn.collidepoint(event.pos):
                                 self.difficulty = "hard"
+                                self.init_game()
                             continue  # ⭐ 阻止落子
 
                         # ================== ⭐ 3. 正常按钮 ==================
