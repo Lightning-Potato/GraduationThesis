@@ -49,6 +49,7 @@ class GomokuGUI:
 
         self.restart_btn = pygame.Rect(SCREEN_SIZE - 240, SCREEN_SIZE + 20, 100, 40)
         self.undo_btn = pygame.Rect(SCREEN_SIZE - 120, SCREEN_SIZE + 20, 100, 40)
+        self.back_btn = pygame.Rect(SCREEN_SIZE - 360, SCREEN_SIZE + 20, 100, 40)
 
         self.init_game()
 
@@ -126,9 +127,12 @@ class GomokuGUI:
         self.screen.blit(self.font.render(score_text, True, TEXT_COLOR), (20, SCREEN_SIZE + 10))
 
         # 按钮
+        pygame.draw.rect(self.screen, BUTTON_COLOR, self.back_btn)
         pygame.draw.rect(self.screen, BUTTON_COLOR, self.restart_btn)
         pygame.draw.rect(self.screen, BUTTON_COLOR, self.undo_btn)
 
+        self.screen.blit(self.font.render("返回菜单", True, TEXT_COLOR),
+                         (self.back_btn.x + 5, self.back_btn.y + 8))
         self.screen.blit(self.font.render("重新开始", True, TEXT_COLOR),
                          (self.restart_btn.x + 5, self.restart_btn.y + 8))
         self.screen.blit(self.font.render("悔棋", True, TEXT_COLOR),
@@ -229,9 +233,16 @@ class GomokuGUI:
 
                 elif self.state == "game":
                     if event.type == pygame.MOUSEBUTTONDOWN:
+                        # ⭐ 返回菜单
+                        if self.back_btn.collidepoint(event.pos):
+                            self.state = "menu"
+                            self.input_text = ""
+                            self.score_p1 = 0
+                            self.score_p2 = 0
+                            self.init_game()
+                            continue
                         if self.restart_btn.collidepoint(event.pos):
                             self.init_game()
-
                         elif self.undo_btn.collidepoint(event.pos):
                             if len(self.move_history) >= 2:
                                 r, c = self.move_history.pop()
@@ -241,13 +252,11 @@ class GomokuGUI:
 
 
                         elif self.handle_click(event.pos):
-                            # ⭐ 先刷新，让玩家的棋子立刻显示
                             self.draw_board()
                             self.draw_pieces()
                             self.draw_ui()
                             pygame.display.flip()
-                            pygame.event.pump()  # 防止窗口卡死
-                            # ⭐ 再让 AI 思考
+                            pygame.event.pump()
                             self.ai_turn()
 
 
