@@ -50,13 +50,35 @@ class GomokuGUI:
         self.restart_btn = pygame.Rect(SCREEN_SIZE - 240, SCREEN_SIZE + 20, 100, 40)
         self.undo_btn = pygame.Rect(SCREEN_SIZE - 120, SCREEN_SIZE + 20, 100, 40)
         self.back_btn = pygame.Rect(SCREEN_SIZE - 360, SCREEN_SIZE + 20, 100, 40)
+        # ⭐ 新增（放在按钮定义下面）
+        self.settings_btn = pygame.Rect(SCREEN_SIZE - 360, SCREEN_SIZE + 20, 100, 40)
+
+        # ⭐ 弹窗控制
+        self.show_popup = False
+        self.winner_text = ""
+
+        # ⭐ 设置面板
+        self.show_settings = False
+
+        # ⭐ 难度
+        self.difficulty = "medium"
 
         self.init_game()
 
     def init_game(self):
         self.engine = GomokuEngine(size=BOARD_SIZE)
         self.evaluator = GomokuEvaluator(self.engine)
-        self.ai = MinimaxAI(self.engine, self.evaluator, depth=3)
+        # ⭐ 替换这一行
+        # self.ai = MinimaxAI(self.engine, self.evaluator, depth=3)
+
+        if self.difficulty == "easy":
+            depth = 2
+        elif self.difficulty == "hard":
+            depth = 4
+        else:
+            depth = 3
+
+        self.ai = MinimaxAI(self.engine, self.evaluator, depth=depth)
 
         self.game_over = False
         self.move_history = []
@@ -127,16 +149,68 @@ class GomokuGUI:
         self.screen.blit(self.font.render(score_text, True, TEXT_COLOR), (20, SCREEN_SIZE + 10))
 
         # 按钮
-        pygame.draw.rect(self.screen, BUTTON_COLOR, self.back_btn)
+        pygame.draw.rect(self.screen, BUTTON_COLOR, self.settings_btn)
         pygame.draw.rect(self.screen, BUTTON_COLOR, self.restart_btn)
         pygame.draw.rect(self.screen, BUTTON_COLOR, self.undo_btn)
 
-        self.screen.blit(self.font.render("返回菜单", True, TEXT_COLOR),
-                         (self.back_btn.x + 5, self.back_btn.y + 8))
+        self.screen.blit(self.font.render("设置", True, TEXT_COLOR),
+                         (self.settings_btn.x + 20, self.settings_btn.y + 8))
         self.screen.blit(self.font.render("重新开始", True, TEXT_COLOR),
                          (self.restart_btn.x + 5, self.restart_btn.y + 8))
         self.screen.blit(self.font.render("悔棋", True, TEXT_COLOR),
                          (self.undo_btn.x + 25, self.undo_btn.y + 8))
+
+    def draw_popup(self):
+        # 半透明遮罩
+        overlay = pygame.Surface((SCREEN_SIZE, SCREEN_SIZE))
+        overlay.set_alpha(150)
+        overlay.fill((0, 0, 0))
+        self.screen.blit(overlay, (0, 0))
+
+        # 弹窗卡片
+        rect = pygame.Rect(150, 200, 300, 200)
+        pygame.draw.rect(self.screen, (250, 240, 220), rect, border_radius=10)
+
+        # 文本
+        text = self.font.render(self.winner_text, True, (50, 50, 50))
+        self.screen.blit(text, (rect.x + 60, rect.y + 50))
+
+        # 下一局按钮
+        self.next_btn = pygame.Rect(rect.x + 100, rect.y + 120, 100, 40)
+        pygame.draw.rect(self.screen, BUTTON_COLOR, self.next_btn)
+        self.screen.blit(self.font.render("下一局", True, TEXT_COLOR),
+                         (self.next_btn.x + 10, self.next_btn.y + 8))
+
+    def draw_settings(self):
+        overlay = pygame.Surface((SCREEN_SIZE, SCREEN_SIZE))
+        overlay.set_alpha(120)
+        overlay.fill((0, 0, 0))
+        self.screen.blit(overlay, (0, 0))
+
+        rect = pygame.Rect(150, 180, 300, 260)
+        pygame.draw.rect(self.screen, (245, 235, 210), rect, border_radius=10)
+
+        title = self.font.render("设置", True, TEXT_COLOR)
+        self.screen.blit(title, (rect.x + 120, rect.y + 20))
+
+        # 返回主页
+        self.home_btn = pygame.Rect(rect.x + 80, rect.y + 70, 140, 40)
+        pygame.draw.rect(self.screen, BUTTON_COLOR, self.home_btn)
+        self.screen.blit(self.font.render("返回主页", True, TEXT_COLOR),
+                         (self.home_btn.x + 10, self.home_btn.y + 8))
+
+        # 难度按钮
+        self.easy_btn = pygame.Rect(rect.x + 20, rect.y + 140, 80, 40)
+        self.mid_btn = pygame.Rect(rect.x + 110, rect.y + 140, 80, 40)
+        self.hard_btn = pygame.Rect(rect.x + 200, rect.y + 140, 80, 40)
+
+        pygame.draw.rect(self.screen, BUTTON_COLOR, self.easy_btn)
+        pygame.draw.rect(self.screen, BUTTON_COLOR, self.mid_btn)
+        pygame.draw.rect(self.screen, BUTTON_COLOR, self.hard_btn)
+
+        self.screen.blit(self.font.render("简单", True, TEXT_COLOR), (self.easy_btn.x + 10, self.easy_btn.y + 8))
+        self.screen.blit(self.font.render("中等", True, TEXT_COLOR), (self.mid_btn.x + 10, self.mid_btn.y + 8))
+        self.screen.blit(self.font.render("困难", True, TEXT_COLOR), (self.hard_btn.x + 10, self.hard_btn.y + 8))
 
     # ================== 落子 ==================
     def handle_click(self, pos):
@@ -158,8 +232,12 @@ class GomokuGUI:
 
                 if self.current_player == 1:
                     self.score_p1 += 1
+                    self.winner_text = f"{self.player1_name} 获胜！"
                 else:
                     self.score_p2 += 1
+                    self.winner_text = f"{self.player2_name} 获胜！"
+
+                self.show_popup = True
 
             self.current_player = 3 - self.current_player
             return True
@@ -180,6 +258,8 @@ class GomokuGUI:
             if self.engine.check_win(r, c, 2):
                 self.score_p2 += 1
                 self.game_over = True
+                self.winner_text = f"{self.player2_name} 获胜！"
+                self.show_popup = True
 
             self.current_player = 1
 
@@ -196,6 +276,12 @@ class GomokuGUI:
                 self.draw_board()
                 self.draw_pieces()
                 self.draw_ui()
+
+                if self.show_popup:
+                    self.draw_popup()
+
+                if self.show_settings:
+                    self.draw_settings()
 
             pygame.display.flip()
 
@@ -231,27 +317,50 @@ class GomokuGUI:
                         else:
                             self.input_text += event.unicode
 
+
                 elif self.state == "game":
                     if event.type == pygame.MOUSEBUTTONDOWN:
-                        # ⭐ 返回菜单
-                        if self.back_btn.collidepoint(event.pos):
-                            self.state = "menu"
-                            self.input_text = ""
-                            self.score_p1 = 0
-                            self.score_p2 = 0
-                            self.init_game()
+                        # ================== ⭐ 1. 胜利弹窗优先 ==================
+                        if self.show_popup:
+                            if self.next_btn.collidepoint(event.pos):
+                                self.show_popup = False
+                                self.init_game()
+                            continue  # ⭐ 阻止后续点击
+
+                        # ================== ⭐ 2. 设置面板优先 ==================
+                        if self.show_settings:
+                            if self.home_btn.collidepoint(event.pos):
+                                self.state = "menu"
+                                self.show_settings = False
+                                self.score_p1 = 0
+                                self.score_p2 = 0
+                                self.init_game()
+
+                            elif self.easy_btn.collidepoint(event.pos):
+                                self.difficulty = "easy"
+                            elif self.mid_btn.collidepoint(event.pos):
+                                self.difficulty = "medium"
+                            elif self.hard_btn.collidepoint(event.pos):
+                                self.difficulty = "hard"
+                            continue  # ⭐ 阻止落子
+
+                        # ================== ⭐ 3. 正常按钮 ==================
+                        if self.settings_btn.collidepoint(event.pos):
+                            self.show_settings = True
                             continue
                         if self.restart_btn.collidepoint(event.pos):
                             self.init_game()
-                        elif self.undo_btn.collidepoint(event.pos):
+                            continue
+                        if self.undo_btn.collidepoint(event.pos):
                             if len(self.move_history) >= 2:
                                 r, c = self.move_history.pop()
                                 self.engine.undo_move(r, c)
                                 r, c = self.move_history.pop()
                                 self.engine.undo_move(r, c)
+                            continue
 
-
-                        elif self.handle_click(event.pos):
+                        # ================== ⭐ 4. 棋盘点击 ==================
+                        if self.handle_click(event.pos):
                             self.draw_board()
                             self.draw_pieces()
                             self.draw_ui()
