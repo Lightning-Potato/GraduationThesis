@@ -40,7 +40,7 @@ class GomokuGUI:
 
         self.player1_name = ""
         self.player2_name = ""
-        self.input_text = ""
+        # self.input_text = ""
 
         self.score_p1 = 0
         self.score_p2 = 0
@@ -48,10 +48,21 @@ class GomokuGUI:
         # 按钮
         self.pvp_btn = pygame.Rect(200, 200, 200, 60)
         self.pve_btn = pygame.Rect(200, 300, 200, 60)
+        self.rank_btn = pygame.Rect(200, 400, 200, 60)
+        self.rule_btn = pygame.Rect(200, 500, 200, 60)
 
         self.restart_btn = pygame.Rect(SCREEN_SIZE - 240, SCREEN_SIZE + 20, 100, 40)
         self.undo_btn = pygame.Rect(SCREEN_SIZE - 120, SCREEN_SIZE + 20, 100, 40)
         self.settings_btn = pygame.Rect(SCREEN_SIZE - 360, SCREEN_SIZE + 20, 100, 40)
+
+        # ⭐ 输入框
+        self.input_box1 = pygame.Rect(180, 220, 260, 40)
+        self.input_box2 = pygame.Rect(180, 300, 260, 40)
+        self.confirm_btn = pygame.Rect(220, 380, 160, 50)
+
+        self.input_active = 1  # 当前输入框（1 or 2）
+        self.input_text1 = ""
+        self.input_text2 = ""
 
         # 状态
         self.show_popup = False
@@ -96,19 +107,42 @@ class GomokuGUI:
     # ================== 菜单 ==================
     def draw_menu(self):
         self.screen.fill(UI_BG)
-        title = self.font.render("选择模式", True, UI_TEXT)
-        self.screen.blit(title, (260, 120))
+        title = pygame.font.SysFont("simhei", 36).render("五子棋对战", True, UI_TEXT)
+        self.screen.blit(title, (220, 120))
 
-        self.draw_button(self.pvp_btn, "人人对战")
         self.draw_button(self.pve_btn, "人机对战")
+        self.draw_button(self.pvp_btn, "人人对战")
+        self.draw_button(self.rank_btn, "排行榜")
+        self.draw_button(self.rule_btn, "游戏规则")
 
     # ================== 输入 ==================
     def draw_input(self):
         self.screen.fill(UI_BG)
 
-        prompt = "输入玩家名字:" if self.mode == "pve" else "输入玩家1,玩家2:"
-        self.screen.blit(self.font.render(prompt, True, UI_TEXT), (100, 200))
-        self.screen.blit(self.font.render(self.input_text, True, UI_TEXT), (100, 250))
+        title = self.font.render("输入玩家名称", True, UI_TEXT)
+        self.screen.blit(title, (220, 150))
+
+        # ===== 玩家1 =====
+        pygame.draw.rect(self.screen, UI_BG, self.input_box1)
+        pygame.draw.rect(self.screen, UI_BORDER, self.input_box1, 2)
+
+        text1 = self.input_text1 if self.input_text1 else "Player1"
+        color1 = UI_TEXT if self.input_text1 else (150, 150, 150)
+        self.screen.blit(self.font.render(text1, True, color1),
+                         (self.input_box1.x + 10, self.input_box1.y + 8))
+
+        # ===== 玩家2（仅PVP）=====
+        if self.mode == "pvp":
+            pygame.draw.rect(self.screen, UI_BG, self.input_box2)
+            pygame.draw.rect(self.screen, UI_BORDER, self.input_box2, 2)
+
+            text2 = self.input_text2 if self.input_text2 else "Player2"
+            color2 = UI_TEXT if self.input_text2 else (150, 150, 150)
+            self.screen.blit(self.font.render(text2, True, color2),
+                             (self.input_box2.x + 10, self.input_box2.y + 8))
+
+        # ===== 确认按钮 =====
+        self.draw_button(self.confirm_btn, "开始游戏")
 
     # ================== 棋盘 ==================
     def draw_board(self):
@@ -268,27 +302,52 @@ class GomokuGUI:
                     if event.type == pygame.MOUSEBUTTONDOWN:
                         if self.pvp_btn.collidepoint(event.pos):
                             self.mode = "pvp"
-                            self.input_text = ""
+                            self.input_text1 = ""
+                            self.input_text2 = ""
+                            self.input_active = 1
                             self.state = "input"
                         elif self.pve_btn.collidepoint(event.pos):
                             self.mode = "pve"
-                            self.input_text = ""
+                            self.input_text1 = ""
+                            self.input_text2 = ""
+                            self.input_active = 1
                             self.state = "input"
+                        elif self.rank_btn.collidepoint(event.pos):
+                            print("排行榜（未实现）")
+                        elif self.rule_btn.collidepoint(event.pos):
+                            print("游戏规则（未实现）")
 
                 elif self.state == "input":
-                    if event.type == pygame.KEYDOWN:
-                        if event.key == pygame.K_RETURN:
+                    # ⭐ 鼠标点击（切换输入框 or 点击确认）
+                    if event.type == pygame.MOUSEBUTTONDOWN:
+                        if self.input_box1.collidepoint(event.pos):
+                            self.input_active = 1
+                        elif self.input_box2.collidepoint(event.pos):
+                            self.input_active = 2
+                        elif self.confirm_btn.collidepoint(event.pos):
+
+                            # ===== 默认值处理 =====
                             if self.mode == "pve":
-                                self.player1_name = self.input_text
+                                self.player1_name = self.input_text1 if self.input_text1 else "Player"
                                 self.player2_name = "AI"
                             else:
-                                n = self.input_text.split(",")
-                                self.player1_name, self.player2_name = n
+                                self.player1_name = self.input_text1 if self.input_text1 else "Player1"
+                                self.player2_name = self.input_text2 if self.input_text2 else "Player2"
+
                             self.state = "game"
-                        elif event.key == pygame.K_BACKSPACE:
-                            self.input_text = self.input_text[:-1]
+
+                    # ⭐ 键盘输入
+                    elif event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_BACKSPACE:
+                            if self.input_active == 1:
+                                self.input_text1 = self.input_text1[:-1]
+                            else:
+                                self.input_text2 = self.input_text2[:-1]
                         else:
-                            self.input_text += event.unicode
+                            if self.input_active == 1:
+                                self.input_text1 += event.unicode
+                            else:
+                                self.input_text2 += event.unicode
 
                 elif self.state == "game":
                     if event.type == pygame.MOUSEBUTTONDOWN:
