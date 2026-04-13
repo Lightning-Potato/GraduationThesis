@@ -20,11 +20,15 @@ BLACK = config.COLORS['BLACK']
 WHITE = config.COLORS['WHITE']
 
 # ⭐ 黑白极简UI
-UI_BG = (250, 250, 250)
-UI_PANEL = (240, 240, 240)
-UI_BORDER = (30, 30, 30)
-UI_HOVER = (220, 220, 220)
-UI_TEXT = (20, 20, 20)
+UI_BG = (245, 245, 247)        # 页面背景（略灰白）
+UI_PANEL = (255, 255, 255)     # 卡片白
+UI_BORDER = (200, 200, 200)    # 细边框（很淡）
+UI_HOVER = (235, 235, 235)     # hover
+UI_TEXT = (20, 20, 20)         # 主文字
+
+UI_SHADOW = (0, 0, 0, 30)      # 阴影（重点）
+UI_ACCENT = (0, 0, 0)          # 主强调色（黑）
+UI_PLACEHOLDER = (160, 160, 160)
 
 
 class GomokuGUI:
@@ -86,12 +90,25 @@ class GomokuGUI:
     # ================== UI组件 ==================
     def draw_button(self, rect, text):
         mouse = pygame.mouse.get_pos()
-        color = UI_HOVER if rect.collidepoint(mouse) else UI_BG
-        pygame.draw.rect(self.screen, color, rect)
-        pygame.draw.rect(self.screen, UI_BORDER, rect, 2)
+        hover = rect.collidepoint(mouse)
 
+        # ===== 阴影 =====
+        shadow_rect = rect.move(0, 4)
+        shadow_surf = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
+        pygame.draw.rect(shadow_surf, UI_SHADOW, shadow_surf.get_rect(), border_radius=12)
+        self.screen.blit(shadow_surf, shadow_rect)
+
+        # ===== 按钮本体 =====
+        color = UI_HOVER if hover else UI_PANEL
+        pygame.draw.rect(self.screen, color, rect, border_radius=12)
+
+        # 边框（极细）
+        pygame.draw.rect(self.screen, UI_BORDER, rect, 1, border_radius=12)
+
+        # ===== 文字居中 =====
         text_surface = self.font.render(text, True, UI_TEXT)
-        self.screen.blit(text_surface, (rect.x + 10, rect.y + 8))
+        text_rect = text_surface.get_rect(center=rect.center)
+        self.screen.blit(text_surface, text_rect)
 
     def draw_diff_btn(self, rect, text, selected):
         if selected:
@@ -123,21 +140,37 @@ class GomokuGUI:
         self.screen.blit(title, (220, 150))
 
         # ===== 玩家1 =====
-        pygame.draw.rect(self.screen, UI_BG, self.input_box1)
-        pygame.draw.rect(self.screen, UI_BORDER, self.input_box1, 2)
+        # ===== 输入框阴影 =====
+        shadow = self.input_box1.move(0, 3)
+        shadow_surf = pygame.Surface((self.input_box1.width, self.input_box1.height), pygame.SRCALPHA)
+        pygame.draw.rect(shadow_surf, UI_SHADOW, shadow_surf.get_rect(), border_radius=10)
+        self.screen.blit(shadow_surf, shadow)
+
+        # ===== 输入框 =====
+        border_color = UI_ACCENT if self.input_active == 1 else UI_BORDER
+        pygame.draw.rect(self.screen, UI_PANEL, self.input_box1, border_radius=10)
+        pygame.draw.rect(self.screen, border_color, self.input_box1, 2, border_radius=10)
 
         text1 = self.input_text1 if self.input_text1 else "Player1"
-        color1 = UI_TEXT if self.input_text1 else (150, 150, 150)
+        color1 = UI_TEXT if self.input_text1 else UI_PLACEHOLDER
         self.screen.blit(self.font.render(text1, True, color1),
                          (self.input_box1.x + 10, self.input_box1.y + 8))
 
         # ===== 玩家2（仅PVP）=====
         if self.mode == "pvp":
-            pygame.draw.rect(self.screen, UI_BG, self.input_box2)
-            pygame.draw.rect(self.screen, UI_BORDER, self.input_box2, 2)
+            # ===== 输入框阴影 =====
+            shadow = self.input_box2.move(0, 3)
+            shadow_surf = pygame.Surface((self.input_box2.width, self.input_box2.height), pygame.SRCALPHA)
+            pygame.draw.rect(shadow_surf, UI_SHADOW, shadow_surf.get_rect(), border_radius=10)
+            self.screen.blit(shadow_surf, shadow)
+
+            # ===== 输入框 =====
+            border_color = UI_ACCENT if self.input_active == 1 else UI_BORDER
+            pygame.draw.rect(self.screen, UI_PANEL, self.input_box2, border_radius=10)
+            pygame.draw.rect(self.screen, border_color, self.input_box2, 2, border_radius=10)
 
             text2 = self.input_text2 if self.input_text2 else "Player2"
-            color2 = UI_TEXT if self.input_text2 else (150, 150, 150)
+            color2 = UI_TEXT if self.input_text2 else UI_PLACEHOLDER
             self.screen.blit(self.font.render(text2, True, color2),
                              (self.input_box2.x + 10, self.input_box2.y + 8))
 
@@ -176,8 +209,14 @@ class GomokuGUI:
     # ================== UI ==================
     def draw_ui(self):
         panel = pygame.Rect(0, SCREEN_SIZE, SCREEN_SIZE, BOTTOM_PANEL)
-        pygame.draw.rect(self.screen, UI_PANEL, panel)
-        pygame.draw.line(self.screen, UI_BORDER, (0, SCREEN_SIZE), (SCREEN_SIZE, SCREEN_SIZE), 2)
+        # 阴影
+        shadow = panel.move(0, -3)
+        shadow_surf = pygame.Surface((panel.width, panel.height), pygame.SRCALPHA)
+        pygame.draw.rect(shadow_surf, UI_SHADOW, shadow_surf.get_rect(), border_radius=12)
+        self.screen.blit(shadow_surf, shadow)
+
+        # 卡片
+        pygame.draw.rect(self.screen, UI_PANEL, panel, border_radius=12)
 
         score = f"{self.player1_name} {self.score_p1} : {self.score_p2} {self.player2_name}"
         self.screen.blit(self.font.render(score, True, UI_TEXT), (20, SCREEN_SIZE + 10))
@@ -194,8 +233,14 @@ class GomokuGUI:
         self.screen.blit(overlay, (0, 0))
 
         rect = pygame.Rect(150, 200, 300, 200)
-        pygame.draw.rect(self.screen, UI_BG, rect, border_radius=10)
-        pygame.draw.rect(self.screen, UI_BORDER, rect, 2, border_radius=10)
+        # 阴影
+        shadow = rect.move(0, 6)
+        shadow_surf = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
+        pygame.draw.rect(shadow_surf, UI_SHADOW, shadow_surf.get_rect(), border_radius=16)
+        self.screen.blit(shadow_surf, shadow)
+
+        # 卡片
+        pygame.draw.rect(self.screen, UI_PANEL, rect, border_radius=16)
 
         self.screen.blit(self.font.render(self.winner_text, True, UI_TEXT), (rect.x + 60, rect.y + 50))
 
