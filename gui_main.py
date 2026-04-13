@@ -41,6 +41,24 @@ class GomokuGUI:
 
         self.state = "menu"
         self.mode = None
+        self.rule_text = [
+            "五子棋游戏规则",
+            "",
+            "【游戏规则】",
+            "五子棋在15×15的棋盘上进行。",
+            "黑棋先行，玩家轮流在空的交叉点放置棋子。",
+            "率先在横、竖或对角线形成五子连线者获胜。",
+            "棋子一旦落下不可移动或移除。",
+            "",
+            "【基本策略】",
+            "攻击与防守：既要防守，也要创造威胁。",
+            "中心控制：中心更容易形成多方向连线。",
+            "连接棋子：尽量形成连续结构。",
+            "识别模式：如“活四”等关键棋型。"
+        ]
+
+        # 返回按钮
+        self.rule_back_btn = pygame.Rect(220, 520, 160, 50)
 
         self.player1_name = ""
         self.player2_name = ""
@@ -131,6 +149,35 @@ class GomokuGUI:
         self.draw_button(self.pvp_btn, "人人对战")
         self.draw_button(self.rank_btn, "排行榜")
         self.draw_button(self.rule_btn, "游戏规则")
+
+    def draw_rules(self):
+        self.screen.fill(UI_BG)
+
+        # ===== 标题 =====
+        title_font = pygame.font.SysFont("simhei", 32)
+        title = title_font.render("游戏规则", True, UI_TEXT)
+        self.screen.blit(title, (240, 60))
+
+        # ===== 卡片背景 =====
+        rect = pygame.Rect(80, 120, SCREEN_SIZE - 160, 380)
+
+        # 阴影
+        shadow = rect.move(0, 6)
+        shadow_surf = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
+        pygame.draw.rect(shadow_surf, UI_SHADOW, shadow_surf.get_rect(), border_radius=16)
+        self.screen.blit(shadow_surf, shadow)
+
+        pygame.draw.rect(self.screen, UI_PANEL, rect, border_radius=16)
+
+        # ===== 规则文本 =====
+        y_offset = rect.y + 20
+        for line in self.rule_text:
+            text = self.font.render(line, True, UI_TEXT)
+            self.screen.blit(text, (rect.x + 20, y_offset))
+            y_offset += 28
+
+        # ===== 返回按钮 =====
+        self.draw_button(self.rule_back_btn, "返回")
 
     # ================== 输入 ==================
     def draw_input(self):
@@ -326,6 +373,8 @@ class GomokuGUI:
                 self.draw_menu()
             elif self.state == "input":
                 self.draw_input()
+            elif self.state == "rules":  # ⭐ 新增
+                self.draw_rules()
             elif self.state == "game":
                 self.draw_board()
                 self.draw_pieces()
@@ -360,7 +409,12 @@ class GomokuGUI:
                         elif self.rank_btn.collidepoint(event.pos):
                             print("排行榜（未实现）")
                         elif self.rule_btn.collidepoint(event.pos):
-                            print("游戏规则（未实现）")
+                            self.state = "rules"
+
+                elif self.state == "rules":
+                    if event.type == pygame.MOUSEBUTTONDOWN:
+                        if self.rule_back_btn.collidepoint(event.pos):
+                            self.state = "menu"
 
                 elif self.state == "input":
                     # ⭐ 鼠标点击（切换输入框 or 点击确认）
