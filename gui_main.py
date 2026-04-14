@@ -35,7 +35,7 @@ class GomokuGUI:
     def __init__(self):
         pygame.init()
         self.screen = pygame.display.set_mode((SCREEN_SIZE, WINDOW_HEIGHT))
-        pygame.display.set_caption("五子棋 AI")
+        pygame.display.set_caption("Gomoku AI")
 
         self.font = pygame.font.SysFont("simhei", 22)
 
@@ -142,20 +142,20 @@ class GomokuGUI:
     # ================== 菜单 ==================
     def draw_menu(self):
         self.screen.fill(UI_BG)
-        title = pygame.font.SysFont("simhei", 36).render("五子棋对战", True, UI_TEXT)
+        title = pygame.font.SysFont("simhei", 36).render("Gomoku (Five in a Row) Battle", True, UI_TEXT)
         self.screen.blit(title, (220, 120))
 
-        self.draw_button(self.pve_btn, "人机对战")
-        self.draw_button(self.pvp_btn, "人人对战")
-        self.draw_button(self.rank_btn, "排行榜")
-        self.draw_button(self.rule_btn, "游戏规则")
+        self.draw_button(self.pve_btn, "Player vs. AI")
+        self.draw_button(self.pvp_btn, "Player vs. Player")
+        self.draw_button(self.rank_btn, "Rankings")
+        self.draw_button(self.rule_btn, "Game Rules")
 
     def draw_rules(self):
         self.screen.fill(UI_BG)
 
         # ===== 标题 =====
         title_font = pygame.font.SysFont("simhei", 32)
-        title = title_font.render("游戏规则", True, UI_TEXT)
+        title = title_font.render("Game Rules", True, UI_TEXT)
         self.screen.blit(title, (240, 60))
 
         # ===== 卡片背景 =====
@@ -177,13 +177,13 @@ class GomokuGUI:
             y_offset += 28
 
         # ===== 返回按钮 =====
-        self.draw_button(self.rule_back_btn, "返回")
+        self.draw_button(self.rule_back_btn, "Back")
 
     # ================== 输入 ==================
     def draw_input(self):
         self.screen.fill(UI_BG)
 
-        title = self.font.render("输入玩家名称", True, UI_TEXT)
+        title = self.font.render("Enter player name", True, UI_TEXT)
         self.screen.blit(title, (220, 150))
 
         # ===== 玩家1 =====
@@ -222,7 +222,7 @@ class GomokuGUI:
                              (self.input_box2.x + 10, self.input_box2.y + 8))
 
         # ===== 确认按钮 =====
-        self.draw_button(self.confirm_btn, "开始游戏")
+        self.draw_button(self.confirm_btn, "Start Game")
 
     # ================== 棋盘 ==================
     def draw_board(self):
@@ -268,9 +268,9 @@ class GomokuGUI:
         score = f"{self.player1_name} {self.score_p1} : {self.score_p2} {self.player2_name}"
         self.screen.blit(self.font.render(score, True, UI_TEXT), (20, SCREEN_SIZE + 10))
 
-        self.draw_button(self.settings_btn, "设置")
-        self.draw_button(self.restart_btn, "重开")
-        self.draw_button(self.undo_btn, "悔棋")
+        self.draw_button(self.settings_btn, "Settings")
+        self.draw_button(self.restart_btn, "Restart")
+        self.draw_button(self.undo_btn, "Withdraw a move")
 
     # ================== 弹窗 ==================
     def draw_popup(self):
@@ -292,7 +292,7 @@ class GomokuGUI:
         self.screen.blit(self.font.render(self.winner_text, True, UI_TEXT), (rect.x + 60, rect.y + 50))
 
         self.next_btn = pygame.Rect(rect.x + 100, rect.y + 120, 100, 40)
-        self.draw_button(self.next_btn, "下一局")
+        self.draw_button(self.next_btn, "Next game")
 
     # ================== 设置 ==================
     def draw_settings(self):
@@ -308,16 +308,16 @@ class GomokuGUI:
         self.home_btn = pygame.Rect(rect.x + 80, rect.y + 70, 140, 40)
         self.back_game_btn = pygame.Rect(rect.x + 80, rect.y + 110, 140, 40)
 
-        self.draw_button(self.home_btn, "返回主页")
-        self.draw_button(self.back_game_btn, "返回游戏")
+        self.draw_button(self.home_btn, "Return to homepage")
+        self.draw_button(self.back_game_btn, "Return to game")
 
         self.easy_btn = pygame.Rect(rect.x + 20, rect.y + 160, 80, 40)
         self.mid_btn = pygame.Rect(rect.x + 110, rect.y + 160, 80, 40)
         self.hard_btn = pygame.Rect(rect.x + 200, rect.y + 160, 80, 40)
 
-        self.draw_diff_btn(self.easy_btn, "简单", self.difficulty == "easy")
-        self.draw_diff_btn(self.mid_btn, "中等", self.difficulty == "medium")
-        self.draw_diff_btn(self.hard_btn, "困难", self.difficulty == "hard")
+        self.draw_diff_btn(self.easy_btn, "Easy", self.difficulty == "easy")
+        self.draw_diff_btn(self.mid_btn, "Medium", self.difficulty == "medium")
+        self.draw_diff_btn(self.hard_btn, "Hard", self.difficulty == "hard")
 
     # ================== 逻辑（不变） ==================
     def handle_click(self, pos):
@@ -338,10 +338,10 @@ class GomokuGUI:
                 self.game_over = True
                 if self.current_player == 1:
                     self.score_p1 += 1
-                    self.winner_text = f"{self.player1_name} 获胜！"
+                    self.winner_text = f"{self.player1_name} Win！"
                 else:
                     self.score_p2 += 1
-                    self.winner_text = f"{self.player2_name} 获胜！"
+                    self.winner_text = f"{self.player2_name} Win！"
                 self.show_popup = True
 
             self.current_player = 3 - self.current_player
@@ -361,7 +361,7 @@ class GomokuGUI:
             if self.engine.check_win(r, c, 2):
                 self.score_p2 += 1
                 self.game_over = True
-                self.winner_text = f"{self.player2_name} 获胜！"
+                self.winner_text = f"{self.player2_name} Win！"
                 self.show_popup = True
 
             self.current_player = 1

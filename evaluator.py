@@ -22,7 +22,7 @@ class GomokuEvaluator:
         for dx, dy in directions:
             my_count = 0
             opp_count = 0
-            # 检查半径为 4 的局部区域
+            # Detection of a local area with a radius of 4
             for i in range(-4, 5):
                 if i == 0: continue
                 nx, ny = x + i * dx, y + i * dy
