@@ -307,7 +307,7 @@ class GomokuGUI:
 
         self.draw_button(self.settings_btn, "Settings")
         self.draw_button(self.restart_btn, "Restart")
-        self.draw_button(self.undo_btn, "Withdraw a move")
+        self.draw_button(self.undo_btn, "Undo")
 
     # ================== 弹窗 ==================
     def draw_popup(self):
@@ -345,7 +345,7 @@ class GomokuGUI:
         self.home_btn = pygame.Rect(rect.x + 80, rect.y + 70, 140, 40)
         self.back_game_btn = pygame.Rect(rect.x + 80, rect.y + 110, 140, 40)
 
-        self.draw_button(self.home_btn, "Return to homepage")
+        self.draw_button(self.home_btn, "Homepage")
         self.draw_button(self.back_game_btn, "Return to game")
 
         self.easy_btn = pygame.Rect(rect.x + 20, rect.y + 160, 80, 40)
