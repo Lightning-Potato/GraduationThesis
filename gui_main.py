@@ -42,19 +42,12 @@ class GomokuGUI:
         self.state = "menu"
         self.mode = None
         self.rule_text = [
-            "五子棋游戏规则",
+            "Gomoku Game Rules",
             "",
-            "【游戏规则】",
-            "五子棋在15×15的棋盘上进行。",
-            "黑棋先行，玩家轮流在空的交叉点放置棋子。",
-            "率先在横、竖或对角线形成五子连线者获胜。",
-            "棋子一旦落下不可移动或移除。",
-            "",
-            "【基本策略】",
-            "攻击与防守：既要防守，也要创造威胁。",
-            "中心控制：中心更容易形成多方向连线。",
-            "连接棋子：尽量形成连续结构。",
-            "识别模式：如“活四”等关键棋型。"
+            "[Rules]",
+            "Gomoku is played on a 15×15 board.",
+            "Black moves first, and players take turns placing stones on empty intersections.",
+            "The first player to form an unbroken line of five stones horizontally, vertically, or diagonally wins.",
         ]
 
         # 返回按钮
@@ -105,6 +98,29 @@ class GomokuGUI:
         self.move_history = []
         self.current_player = 1
 
+    def draw_text_wrapped(self, text, x, y, max_width, line_height=28):
+        words = text.split(' ')
+        lines = []
+        current_line = ""
+
+        for word in words:
+            test_line = current_line + word + " "
+            text_surface = self.font.render(test_line, True, UI_TEXT)
+
+            if text_surface.get_width() <= max_width:
+                current_line = test_line
+            else:
+                lines.append(current_line)
+                current_line = word + " "
+
+        lines.append(current_line)
+
+        for i, line in enumerate(lines):
+            text_surface = self.font.render(line.strip(), True, UI_TEXT)
+            self.screen.blit(text_surface, (x, y + i * line_height))
+
+        return y + len(lines) * line_height
+
     # ================== UI组件 ==================
     def draw_button(self, rect, text):
         mouse = pygame.mouse.get_pos()
@@ -116,15 +132,23 @@ class GomokuGUI:
         pygame.draw.rect(shadow_surf, UI_SHADOW, shadow_surf.get_rect(), border_radius=12)
         self.screen.blit(shadow_surf, shadow_rect)
 
-        # ===== 按钮本体 =====
+        # ===== 按钮 =====
         color = UI_HOVER if hover else UI_PANEL
         pygame.draw.rect(self.screen, color, rect, border_radius=12)
-
-        # 边框（极细）
         pygame.draw.rect(self.screen, UI_BORDER, rect, 1, border_radius=12)
 
-        # ===== 文字居中 =====
-        text_surface = self.font.render(text, True, UI_TEXT)
+        # ===== ⭐ 自动缩放字体 =====
+        font_size = 22
+        font = pygame.font.SysFont("simhei", font_size)
+
+        text_surface = font.render(text, True, UI_TEXT)
+
+        # 如果太宽 → 缩小字体
+        while text_surface.get_width() > rect.width - 20 and font_size > 12:
+            font_size -= 1
+            font = pygame.font.SysFont("simhei", font_size)
+            text_surface = font.render(text, True, UI_TEXT)
+
         text_rect = text_surface.get_rect(center=rect.center)
         self.screen.blit(text_surface, text_rect)
 
@@ -142,8 +166,13 @@ class GomokuGUI:
     # ================== 菜单 ==================
     def draw_menu(self):
         self.screen.fill(UI_BG)
-        title = pygame.font.SysFont("simhei", 36).render("Gomoku (Five in a Row) Battle", True, UI_TEXT)
-        self.screen.blit(title, (220, 120))
+        title_font = pygame.font.SysFont("simhei", 36)
+        title_surface = title_font.render("Gomoku (Five in a Row) Battle", True, UI_TEXT)
+
+        # ⭐ 关键：真正居中
+        title_rect = title_surface.get_rect(center=(SCREEN_SIZE // 2, 120))
+
+        self.screen.blit(title_surface, title_rect)
 
         self.draw_button(self.pve_btn, "Player vs. AI")
         self.draw_button(self.pvp_btn, "Player vs. Player")
@@ -171,10 +200,18 @@ class GomokuGUI:
 
         # ===== 规则文本 =====
         y_offset = rect.y + 20
+        max_width = rect.width - 40
+
         for line in self.rule_text:
-            text = self.font.render(line, True, UI_TEXT)
-            self.screen.blit(text, (rect.x + 20, y_offset))
-            y_offset += 28
+            if line == "":
+                y_offset += 15  # 空行间距
+            else:
+                y_offset = self.draw_text_wrapped(
+                    line,
+                    rect.x + 20,
+                    y_offset,
+                    max_width
+                )
 
         # ===== 返回按钮 =====
         self.draw_button(self.rule_back_btn, "Back")
