@@ -57,8 +57,8 @@ class MinimaxAI:
             except TimeoutError:
                 break
 
-        print(f"\n--- AI 思考简报 ---")
-        print(f"位置: {best_move} | 最终深度: {last_completed_depth} | 耗时: {time.time() - self.start_time:.2f}s")
+        print(f"\n--- AI is thinking ---")
+        print(f"Position: {best_move} | Depth: {last_completed_depth} | Time: {time.time() - self.start_time:.2f}s")
         return best_move
 
     def _search_at_depth(self, depth):
