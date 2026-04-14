@@ -345,8 +345,8 @@ class GomokuGUI:
         self.home_btn = pygame.Rect(rect.x + 80, rect.y + 70, 140, 40)
         self.back_game_btn = pygame.Rect(rect.x + 80, rect.y + 110, 140, 40)
 
-        self.draw_button(self.home_btn, "Homepage")
-        self.draw_button(self.back_game_btn, "Return to game")
+        self.draw_button(self.home_btn, "Home")
+        self.draw_button(self.back_game_btn, "Back")
 
         self.easy_btn = pygame.Rect(rect.x + 20, rect.y + 160, 80, 40)
         self.mid_btn = pygame.Rect(rect.x + 110, rect.y + 160, 80, 40)
