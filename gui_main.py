@@ -367,11 +367,40 @@ class GomokuGUI:
 
         rankings = self.ranking.get_ranking()
 
-        y = 150
-        for i, (name, score) in enumerate(rankings[:10]):  # 前10名
-            text = f"{i + 1}. {name} - {score}"
-            self.screen.blit(self.font.render(text, True, UI_TEXT), (200, y))
-            y += 40
+        # ===== 卡片背景 =====
+        rect = pygame.Rect(80, 120, SCREEN_SIZE - 160, 360)
+
+        shadow = rect.move(0, 6)
+        shadow_surf = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
+        pygame.draw.rect(shadow_surf, UI_SHADOW, shadow_surf.get_rect(), border_radius=16)
+        self.screen.blit(shadow_surf, shadow)
+
+        pygame.draw.rect(self.screen, UI_PANEL, rect, border_radius=16)
+
+        # ===== 表头 =====
+        headers = ["Rank", "Name", "Wins", "Games", "Win Rate"]
+        x_positions = [100, 180, 300, 380, 480]
+
+        for i, h in enumerate(headers):
+            self.screen.blit(self.font.render(h, True, UI_TEXT),
+                             (x_positions[i], 140))
+
+        # ===== 数据 =====
+        y = 180
+        for i, (name, win, games, rate) in enumerate(rankings[:10]):
+            row = [
+                str(i + 1),
+                name,
+                str(win),
+                str(games),
+                f"{rate * 100:.1f}%"
+            ]
+
+            for j, text in enumerate(row):
+                self.screen.blit(self.font.render(text, True, UI_TEXT),
+                                 (x_positions[j], y))
+
+            y += 30
 
         self.rank_back_btn = pygame.Rect(220, 520, 160, 50)
         self.draw_button(self.rank_back_btn, "Back")
@@ -396,11 +425,16 @@ class GomokuGUI:
                 if self.current_player == 1:
                     self.score_p1 += 1
                     self.winner_text = f"{self.player1_name} Win！"
-                    self.ranking.add_win(self.player1_name)  # ⭐ 新增
+
+                    self.ranking.add_result(self.player1_name, win=True)
+                    self.ranking.add_result(self.player2_name, win=False)
+
                 else:
                     self.score_p2 += 1
                     self.winner_text = f"{self.player2_name} Win！"
-                    self.ranking.add_win(self.player2_name)  # ⭐ 新增
+
+                    self.ranking.add_result(self.player2_name, win=True)
+                    self.ranking.add_result(self.player1_name, win=False)
                 self.show_popup = True
 
             self.current_player = 3 - self.current_player
