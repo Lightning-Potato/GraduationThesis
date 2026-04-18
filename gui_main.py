@@ -367,7 +367,7 @@ class GomokuGUI:
 
         rankings = self.ranking.get_ranking()
 
-        # ===== 卡片背景 =====
+        # ===== 卡片 =====
         rect = pygame.Rect(80, 120, SCREEN_SIZE - 160, 360)
 
         shadow = rect.move(0, 6)
@@ -377,17 +377,26 @@ class GomokuGUI:
 
         pygame.draw.rect(self.screen, UI_PANEL, rect, border_radius=16)
 
+        # ===== ⭐ 列宽设计（关键）=====
+        col_widths = [60, 140, 70, 70, 100]
+        start_x = rect.x + 20
+
+        x_positions = []
+        cur_x = start_x
+        for w in col_widths:
+            x_positions.append(cur_x)
+            cur_x += w
+
         # ===== 表头 =====
-        headers = ["Rank", "Name", "Wins", "Games", "Win Rate"]
-        x_positions = [100, 180, 300, 380, 480]
+        headers = ["Rank", "Name", "Wins", "Games", "Rate"]
 
         for i, h in enumerate(headers):
-            self.screen.blit(self.font.render(h, True, UI_TEXT),
-                             (x_positions[i], 140))
+            self.draw_text_clipped(h, x_positions[i], rect.y + 20, col_widths[i])
 
         # ===== 数据 =====
-        y = 180
+        y = rect.y + 60
         for i, (name, win, games, rate) in enumerate(rankings[:10]):
+
             row = [
                 str(i + 1),
                 name,
@@ -397,13 +406,30 @@ class GomokuGUI:
             ]
 
             for j, text in enumerate(row):
-                self.screen.blit(self.font.render(text, True, UI_TEXT),
-                                 (x_positions[j], y))
+                self.draw_text_clipped(text, x_positions[j], y, col_widths[j])
 
             y += 30
 
+        # ===== 返回按钮 =====
         self.rank_back_btn = pygame.Rect(220, 520, 160, 50)
         self.draw_button(self.rank_back_btn, "Back")
+
+    def draw_text_clipped(self, text, x, y, max_width):
+        font = self.font
+        rendered = font.render(text, True, UI_TEXT)
+
+        # 如果没超宽，直接画
+        if rendered.get_width() <= max_width:
+            self.screen.blit(rendered, (x, y))
+            return
+
+        # 超宽 → 截断 + ...
+        while len(text) > 0:
+            text = text[:-1]
+            rendered = font.render(text + "...", True, UI_TEXT)
+            if rendered.get_width() <= max_width:
+                self.screen.blit(rendered, (x, y))
+                return
 
     # ================== 逻辑（不变） ==================
     def handle_click(self, pos):
