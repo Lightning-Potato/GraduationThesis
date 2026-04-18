@@ -6,6 +6,7 @@ from gomoku_engine import GomokuEngine
 from minimax_ai import MinimaxAI
 from evaluator import GomokuEvaluator
 import config
+from ranking import RankingManager
 
 # ================== 配置 ==================
 BOARD_SIZE = config.BOARD_SIZE
@@ -44,7 +45,6 @@ class GomokuGUI:
         self.rule_text = [
             "Gomoku Game Rules",
             "",
-            "[Rules]",
             "Gomoku is played on a 15×15 board.",
             "Black moves first, and players take turns placing stones on empty intersections.",
             "The first player to form an unbroken line of five stones horizontally, vertically, or diagonally wins.",
@@ -84,6 +84,8 @@ class GomokuGUI:
         self.winner_text = ""
         self.show_settings = False
         self.difficulty = "medium"
+
+        self.ranking = RankingManager()
 
         self.init_game()
 
@@ -356,6 +358,24 @@ class GomokuGUI:
         self.draw_diff_btn(self.mid_btn, "Medium", self.difficulty == "medium")
         self.draw_diff_btn(self.hard_btn, "Hard", self.difficulty == "hard")
 
+    def draw_rankings(self):
+        self.screen.fill(UI_BG)
+
+        title_font = pygame.font.SysFont("simhei", 32)
+        title = title_font.render("Rankings", True, UI_TEXT)
+        self.screen.blit(title, (240, 60))
+
+        rankings = self.ranking.get_ranking()
+
+        y = 150
+        for i, (name, score) in enumerate(rankings[:10]):  # 前10名
+            text = f"{i + 1}. {name} - {score}"
+            self.screen.blit(self.font.render(text, True, UI_TEXT), (200, y))
+            y += 40
+
+        self.rank_back_btn = pygame.Rect(220, 520, 160, 50)
+        self.draw_button(self.rank_back_btn, "Back")
+
     # ================== 逻辑（不变） ==================
     def handle_click(self, pos):
         if self.game_over:
@@ -376,9 +396,11 @@ class GomokuGUI:
                 if self.current_player == 1:
                     self.score_p1 += 1
                     self.winner_text = f"{self.player1_name} Win！"
+                    self.ranking.add_win(self.player1_name)  # ⭐ 新增
                 else:
                     self.score_p2 += 1
                     self.winner_text = f"{self.player2_name} Win！"
+                    self.ranking.add_win(self.player2_name)  # ⭐ 新增
                 self.show_popup = True
 
             self.current_player = 3 - self.current_player
@@ -412,6 +434,8 @@ class GomokuGUI:
                 self.draw_input()
             elif self.state == "rules":  # ⭐ 新增
                 self.draw_rules()
+            elif self.state == "rank":
+                self.draw_rankings()
             elif self.state == "game":
                 self.draw_board()
                 self.draw_pieces()
@@ -444,7 +468,7 @@ class GomokuGUI:
                             self.input_active = 1
                             self.state = "input"
                         elif self.rank_btn.collidepoint(event.pos):
-                            print("排行榜（未实现）")
+                            self.state = "rank"
                         elif self.rule_btn.collidepoint(event.pos):
                             self.state = "rules"
 
@@ -484,6 +508,11 @@ class GomokuGUI:
                                 self.input_text1 += event.unicode
                             else:
                                 self.input_text2 += event.unicode
+
+                elif self.state == "rank":
+                    if event.type == pygame.MOUSEBUTTONDOWN:
+                        if self.rank_back_btn.collidepoint(event.pos):
+                            self.state = "menu"
 
                 elif self.state == "game":
                     if event.type == pygame.MOUSEBUTTONDOWN:
