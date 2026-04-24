@@ -3,10 +3,9 @@
 
 """
 config.py
-用于统一管理游戏参数，提高系统的可维护性 (Maintainability)。
 """
 
-# --- 棋盘与游戏设置 ---
+# --- Chessboard and Game Settings ---
 BOARD_SIZE = 15
 WINDOW_SIZE = 600
 GRID_SIZE = WINDOW_SIZE // (BOARD_SIZE + 1)
@@ -15,7 +14,7 @@ BOTTOM_PANEL = 80
 SCREEN_SIZE = GRID_SIZE * (BOARD_SIZE - 1) + MARGIN * 2
 WINDOW_HEIGHT = SCREEN_SIZE + BOTTOM_PANEL
 
-# --- UI 颜色配置 ---
+# --- UI Color Scheme ---
 COLORS = {
     'BACKGROUND': (235, 185, 120),
     'BLACK': (30, 30, 30),
@@ -25,18 +24,17 @@ COLORS = {
     'BUTTON_HOVER': (220, 180, 120),
 
     'LINE': (0, 0, 0),
-    'LAST_MOVE': (255, 0, 0),       # 最后落子的标记颜色
+    'LAST_MOVE': (255, 0, 0),       # The color used to mark the last move
 }
 
-# --- AI 引擎参数 ---
+# --- AI Engine Parameters ---
 AI_CONFIG = {
-    'MAX_DEPTH': 6,                 # 搜索深度限制
-    'TIME_LIMIT': 5.0,             # AI 思考限时（秒）
-    'TT_SIZE_LIMIT': 400000,        # 置换表条目上限
+    'MAX_DEPTH': 6,                 # Search depth limit
+    'TIME_LIMIT': 10.0,             # AI Thinking Time Limit (seconds)
+    'TT_SIZE_LIMIT': 400000,        # Maximum number of entries in the replacement table
 }
 
-# --- 启发式分值权重 (Heuristic Weights) ---
-# 统一管理分值，方便后续进行“数值调优”实验
+# --- Heuristic Weights --- # Unified management of scores for easier subsequent numerical tuning experiments
 BOARD_SCORES = {
     'FIVE': 100000000,
     'ALIVE_FOUR': 10000000,
@@ -46,5 +44,5 @@ BOARD_SCORES = {
     'ALIVE_TWO': 1000,
     'DEAD_TWO': 100,
 
-    'DEFENSE_MULTIPLIER': 1.2       # 防御分权重
+    'DEFENSE_MULTIPLIER': 1.2       # Defense weighting
 }

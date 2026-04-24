@@ -1,7 +1,7 @@
 import numpy as np
 import config
 
-# 分值层级：定义棋型的核心价值
+# Scoring Tiers: Defining the Core Value of Chess Patterns
 SCORES = config.BOARD_SCORES
 
 
@@ -11,9 +11,8 @@ class GomokuEvaluator:
         self.size = engine.size
 
     def quick_point_score(self, x, y, player):
-        """
-        针对单个落子点的快速启发式评估（性能优化版）。
-        直接统计周围棋子，不使用字符串操作，用于搜索过程中的节点排序。
+        """A fast heuristic evaluation for a single move (performance optimized).
+        Directly counts surrounding pieces without string manipulation; used for node sorting during the search process.
         """
         score = 0
         opponent = 3 - player
@@ -33,30 +32,30 @@ class GomokuEvaluator:
                     elif cell == opponent:
                         opp_count += 1
 
-            # 启发式权重：进攻与防御的平衡
+            # Heuristic Weighting: The Balance Between Offense and Defense
             score += my_count * 10
-            score += int(opp_count * 11)  # 稍微偏向防守以增强鲁棒性
+            score += int(opp_count * 11)  # Slightly biased towards defense to enhance robustness
 
-        # 基础位置分：鼓励 AI 向中心靠拢
+        # Basic location score: Encourage AI to move closer to the center
         center = self.size // 2
         score += (center - abs(x - center)) + (center - abs(y - center))
         return score
 
     def evaluate_board(self, player):
-        """全局评估函数：用于搜索树的叶子节点评分"""
+        """Global evaluation function: used to score the leaf nodes of the search tree."""
         opponent = 3 - player
         my_score = self.count_board_score(player)
         opp_score = self.count_board_score(opponent)
-        # 放大对手分数的权重（1.2倍）以强制 AI 关注威胁
+        # Increase the weight of opponent scores (1.2x) to force AI to focus on threats.
         return int(my_score - opp_score * 1.2)
 
     def count_board_score(self, player):
-        """扫描全图计算总分"""
+        """Scan the entire image to calculate the total score"""
         score = 0
         lines = self._get_all_lines()
         for line in lines:
             line_str = "".join(map(str, line))
-            # 视角转换逻辑
+            # Perspective Shift Logic
             if player == 2:
                 line_str = line_str.replace('1', 'X').replace('2', '1').replace('X', '2')
             score += self._score_line(line_str)
@@ -64,16 +63,16 @@ class GomokuEvaluator:
         return score
 
     def _score_line(self, line_str):
-        """精细化的棋型模式匹配"""
+        """Refined chess pattern matching"""
         if '11111' in line_str: return SCORES['FIVE']
         line_score = 0
         if '011110' in line_str: line_score += SCORES['ALIVE_FOUR']
-        # 冲四与跳冲四识别
+        # Identifying between a four-man rush and a jump four-man rush
         for p in ['11110', '01111', '10111', '11011', '11101']:
             if p in line_str:
                 line_score += SCORES['DEAD_FOUR']
                 break
-        # 活三识别
+        # Live Three Recognition
         for p in ['01110', '011010', '010110']:
             if p in line_str:
                 line_score += SCORES['ALIVE_THREE']
@@ -90,7 +89,7 @@ class GomokuEvaluator:
         return bonus
 
     def _get_all_lines(self):
-        """获取所有可能的获胜线（横、竖、斜）"""
+        """Get all possible winning lines (horizontal, vertical, diagonal)"""
         lines = []
         board = self.engine.board
         for row in board: lines.append(row.tolist())

@@ -2,7 +2,6 @@ import time
 import numpy as np
 import config
 
-# 置换表状态标记
 EXACT = 0
 LOWERBOUND = 1
 UPPERBOUND = 2
@@ -14,34 +13,34 @@ class MinimaxAI:
         self.evaluator = evaluator
         self.max_depth = depth
         self.transposition_table = {}
-        self.time_limit = config.AI_CONFIG['TIME_LIMIT']  # 最大思考时间限制
+        self.time_limit = config.AI_CONFIG['TIME_LIMIT']  # Maximum thinking time limit
         self.start_time = 0
 
         '记录相关指标'
-        self.nodes_visited = 0  # 累计访问节点数
-        self.tt_hits = 0  # 置换表命中次数
-        self.cutoffs = 0  # 剪枝发生次数
-        self.search_history = []  # 用于记录每一步的详细数据
+        self.nodes_visited = 0  # Total number of nodes accessed
+        self.tt_hits = 0  # Number of times the permutation table is hit
+        self.cutoffs = 0  # Number of pruning events
+        self.search_history = []  # Detailed data used to record each step
 
     def get_best_move(self, player_id):
         self.player_id = player_id
         self.opponent_id = 3 - player_id
 
-        # --- 优化：开局库策略 ---
-        # 如果棋盘全空，直接下中心位置，不浪费算力
+        # --- Optimization: Opening Strategy ---
+        # If the board is completely empty, play directly in the center position to avoid wasting computing power.
         if np.sum(self.engine.board != 0) == 0:
             return (self.engine.size // 2, self.engine.size // 2)
 
         self.start_time = time.time()
 
-        # 定期清理置换表防止内存溢出
+        # Regularly clean up the replacement table to prevent memory overflow
         if len(self.transposition_table) > config.AI_CONFIG['TT_SIZE_LIMIT']:
             self.transposition_table.clear()
 
         best_move = None
         last_completed_depth = 0
 
-        # --- 核心逻辑：迭代加深搜索 ---
+        # --- Core Logic: Iterative Deepening of the Search ---
         for current_depth in range(1, self.max_depth + 1):
             try:
                 move, score = self._search_at_depth(current_depth)
@@ -49,10 +48,10 @@ class MinimaxAI:
                     best_move = move
                     last_completed_depth = current_depth
 
-                # 必胜剪枝：一旦发现必胜路径则停止加深搜索
+                # Winning Pruning: Stop deepening the search once a winning path is found.
                 if score >= config.BOARD_SCORES['ALIVE_FOUR']: break
 
-                # 时间预警：如果已经消耗 80% 时间，则不开启下一层深度
+                # Time Warning: If 80% of the time has been consumed, the next depth level will not be opened.
                 if time.time() - self.start_time > self.time_limit * 0.8: break
             except TimeoutError:
                 break
@@ -62,11 +61,11 @@ class MinimaxAI:
         return best_move
 
     def _search_at_depth(self, depth):
-        """根节点搜索逻辑"""
+        """Root Node Search Logic"""
         best_val = -float('inf')
         best_pos = None
 
-        # 候选点排序：利用 evaluator 的快速评估提升剪枝效率
+        # Candidate Ranking: Improving Pruning Efficiency Through Rapid Evaluation by Evaluator
         candidates = self._get_candidates()
         candidates.sort(key=lambda m: self.evaluator.quick_point_score(m[0], m[1], self.player_id), reverse=True)
 
@@ -76,32 +75,32 @@ class MinimaxAI:
 
             self.engine.make_move(x, y, self.player_id)
             try:
-                # 进入递归
+                # Entering recursion
                 val = self.minimax(depth - 1, -float('inf'), float('inf'), False)
                 if val > best_val:
                     best_val = val
                     best_pos = (x, y)
             finally:
-                # 【鲁棒性核心】确保棋盘状态一定会回滚
+                # [Robust Core] Ensures the board state will always be rolled back.
                 self.engine.undo_move(x, y)
 
         return best_pos, best_val
 
     def minimax(self, depth, alpha, beta, is_maximizing):
 
-        self.nodes_visited += 1  # 每次进入递归，计数+1
+        self.nodes_visited += 1  # Each time the recursion is entered, the count is incremented by 1.
 
-        """带 Alpha-Beta 剪枝的 Minimax 递归"""
+        """Minimax Recursion with Alpha-Beta Pruning"""
         if time.time() - self.start_time > self.time_limit:
             raise TimeoutError
 
-        # --- 置换表查询 ---
+        # --- Replacement table lookup ---
         board_hash = self.engine.current_hash
         if board_hash in self.transposition_table:
             entry = self.transposition_table[board_hash]
             if entry['depth'] >= depth:
 
-                self.tt_hits += 1  # 计数命中
+                self.tt_hits += 1  # Hit Count
 
                 if entry['type'] == EXACT: return entry['score']
                 if entry['type'] == LOWERBOUND: alpha = max(alpha, entry['score'])
@@ -114,7 +113,7 @@ class MinimaxAI:
         candidates = self._get_candidates()
         curr_id = self.player_id if is_maximizing else self.opponent_id
 
-        # 每一层都进行快速排序，显著减少分支数
+        # Perform quicksort at each level to significantly reduce the number of branches.
         candidates.sort(key=lambda m: self.evaluator.quick_point_score(m[0], m[1], curr_id), reverse=True)
 
         original_alpha = alpha
@@ -131,7 +130,7 @@ class MinimaxAI:
                     best_score = min(best_score, score)
                     beta = min(beta, score)
             finally:
-                # 【鲁棒性核心】确保递归嵌套中的每一层落子都能被正确撤销
+                # [Robust Core] Ensure that every move in a nested recursion can be correctly undone.
                 self.engine.undo_move(x, y)
 
             if beta <= alpha:
@@ -144,7 +143,7 @@ class MinimaxAI:
         return best_score
 
     def _save_tt(self, h, s, d, a, b):
-        """保存计算结果到置换表"""
+        """Save the calculation results to the permutation table."""
         if s <= a:
             t = UPPERBOUND
         elif s >= b:
@@ -154,7 +153,7 @@ class MinimaxAI:
         self.transposition_table[h] = {'score': s, 'depth': d, 'type': t}
 
     def _get_candidates(self):
-        """获取当前棋局周边 1 格内的有效落子点"""
+        """Get the valid placement points within 1 square around the current chessboard."""
         candidates = set()
         for x in range(self.engine.size):
             for y in range(self.engine.size):

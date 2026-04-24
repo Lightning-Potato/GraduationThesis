@@ -38,7 +38,6 @@ class RankingManager:
             rate = win / games if games > 0 else 0
             ranking.append((name, win, games, rate))
 
-        # ⭐ 按 胜场优先 + 胜率次之 排序
         ranking.sort(key=lambda x: (x[1], x[3]), reverse=True)
         return ranking
 
@@ -46,7 +45,6 @@ class RankingManager:
         ranking = self.get_ranking()
         top10 = ranking[:10]
 
-        # 只保留前10
         new_data = {}
         for name, win, games, rate in top10:
             new_data[name] = {"win": win, "games": games}

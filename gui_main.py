@@ -8,7 +8,7 @@ from evaluator import GomokuEvaluator
 import config
 from ranking import RankingManager
 
-# ================== 配置 ==================
+# ================== Configuration =================
 BOARD_SIZE = config.BOARD_SIZE
 GRID_SIZE = config.GRID_SIZE
 MARGIN = config.MARGIN
@@ -20,15 +20,15 @@ BOARD_COLOR = config.COLORS['BACKGROUND']
 BLACK = config.COLORS['BLACK']
 WHITE = config.COLORS['WHITE']
 
-# ⭐ 黑白极简UI
-UI_BG = (245, 245, 247)        # 页面背景（略灰白）
-UI_PANEL = (255, 255, 255)     # 卡片白
-UI_BORDER = (200, 200, 200)    # 细边框（很淡）
-UI_HOVER = (235, 235, 235)     # hover
-UI_TEXT = (20, 20, 20)         # 主文字
 
-UI_SHADOW = (0, 0, 0, 30)      # 阴影（重点）
-UI_ACCENT = (0, 0, 0)          # 主强调色（黑）
+UI_BG = (245, 245, 247)
+UI_PANEL = (255, 255, 255)
+UI_BORDER = (200, 200, 200)
+UI_HOVER = (235, 235, 235)
+UI_TEXT = (20, 20, 20)
+
+UI_SHADOW = (0, 0, 0, 30)
+UI_ACCENT = (0, 0, 0)
 UI_PLACEHOLDER = (160, 160, 160)
 
 
@@ -50,7 +50,7 @@ class GomokuGUI:
             "The first player to form an unbroken line of five stones horizontally, vertically, or diagonally wins.",
         ]
 
-        # 返回按钮
+        # Back button
         self.rule_back_btn = pygame.Rect(220, 520, 160, 50)
 
         self.player1_name = ""
@@ -60,7 +60,7 @@ class GomokuGUI:
         self.score_p1 = 0
         self.score_p2 = 0
 
-        # 按钮
+        # button
         self.pvp_btn = pygame.Rect(200, 200, 200, 60)
         self.pve_btn = pygame.Rect(200, 300, 200, 60)
         self.rank_btn = pygame.Rect(200, 400, 200, 60)
@@ -70,12 +70,11 @@ class GomokuGUI:
         self.undo_btn = pygame.Rect(SCREEN_SIZE - 120, SCREEN_SIZE + 20, 100, 40)
         self.settings_btn = pygame.Rect(SCREEN_SIZE - 360, SCREEN_SIZE + 20, 100, 40)
 
-        # ⭐ 输入框
         self.input_box1 = pygame.Rect(180, 220, 260, 40)
         self.input_box2 = pygame.Rect(180, 300, 260, 40)
         self.confirm_btn = pygame.Rect(220, 380, 160, 50)
 
-        self.input_active = 1  # 当前输入框（1 or 2）
+        self.input_active = 1  # Current input field (1 or 2)
         self.input_text1 = ""
         self.input_text2 = ""
 
@@ -123,29 +122,27 @@ class GomokuGUI:
 
         return y + len(lines) * line_height
 
-    # ================== UI组件 ==================
+    # ================== UI ==================
     def draw_button(self, rect, text):
         mouse = pygame.mouse.get_pos()
         hover = rect.collidepoint(mouse)
 
-        # ===== 阴影 =====
+        # ===== shadow =====
         shadow_rect = rect.move(0, 4)
         shadow_surf = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
         pygame.draw.rect(shadow_surf, UI_SHADOW, shadow_surf.get_rect(), border_radius=12)
         self.screen.blit(shadow_surf, shadow_rect)
 
-        # ===== 按钮 =====
+        # ===== button =====
         color = UI_HOVER if hover else UI_PANEL
         pygame.draw.rect(self.screen, color, rect, border_radius=12)
         pygame.draw.rect(self.screen, UI_BORDER, rect, 1, border_radius=12)
 
-        # ===== ⭐ 自动缩放字体 =====
         font_size = 22
         font = pygame.font.SysFont("simhei", font_size)
 
         text_surface = font.render(text, True, UI_TEXT)
 
-        # 如果太宽 → 缩小字体
         while text_surface.get_width() > rect.width - 20 and font_size > 12:
             font_size -= 1
             font = pygame.font.SysFont("simhei", font_size)
@@ -165,13 +162,12 @@ class GomokuGUI:
 
         self.screen.blit(text_surface, (rect.x + 10, rect.y + 8))
 
-    # ================== 菜单 ==================
+    # ================== menu ==================
     def draw_menu(self):
         self.screen.fill(UI_BG)
         title_font = pygame.font.SysFont("simhei", 36)
         title_surface = title_font.render("Gomoku (Five in a Row) Battle", True, UI_TEXT)
 
-        # ⭐ 关键：真正居中
         title_rect = title_surface.get_rect(center=(SCREEN_SIZE // 2, 120))
 
         self.screen.blit(title_surface, title_rect)
@@ -184,15 +180,15 @@ class GomokuGUI:
     def draw_rules(self):
         self.screen.fill(UI_BG)
 
-        # ===== 标题 =====
+        # ===== title =====
         title_font = pygame.font.SysFont("simhei", 32)
         title = title_font.render("Game Rules", True, UI_TEXT)
         self.screen.blit(title, (240, 60))
 
-        # ===== 卡片背景 =====
+        # ===== BG =====
         rect = pygame.Rect(80, 120, SCREEN_SIZE - 160, 380)
 
-        # 阴影
+        # shadow
         shadow = rect.move(0, 6)
         shadow_surf = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
         pygame.draw.rect(shadow_surf, UI_SHADOW, shadow_surf.get_rect(), border_radius=16)
@@ -200,13 +196,12 @@ class GomokuGUI:
 
         pygame.draw.rect(self.screen, UI_PANEL, rect, border_radius=16)
 
-        # ===== 规则文本 =====
         y_offset = rect.y + 20
         max_width = rect.width - 40
 
         for line in self.rule_text:
             if line == "":
-                y_offset += 15  # 空行间距
+                y_offset += 15
             else:
                 y_offset = self.draw_text_wrapped(
                     line,
@@ -215,24 +210,21 @@ class GomokuGUI:
                     max_width
                 )
 
-        # ===== 返回按钮 =====
         self.draw_button(self.rule_back_btn, "Back")
 
-    # ================== 输入 ==================
+    # ================== input ==================
     def draw_input(self):
         self.screen.fill(UI_BG)
 
         title = self.font.render("Enter player name", True, UI_TEXT)
         self.screen.blit(title, (220, 150))
 
-        # ===== 玩家1 =====
-        # ===== 输入框阴影 =====
+        # ===== player1 =====
         shadow = self.input_box1.move(0, 3)
         shadow_surf = pygame.Surface((self.input_box1.width, self.input_box1.height), pygame.SRCALPHA)
         pygame.draw.rect(shadow_surf, UI_SHADOW, shadow_surf.get_rect(), border_radius=10)
         self.screen.blit(shadow_surf, shadow)
 
-        # ===== 输入框 =====
         border_color = UI_ACCENT if self.input_active == 1 else UI_BORDER
         pygame.draw.rect(self.screen, UI_PANEL, self.input_box1, border_radius=10)
         pygame.draw.rect(self.screen, border_color, self.input_box1, 2, border_radius=10)
@@ -242,15 +234,13 @@ class GomokuGUI:
         self.screen.blit(self.font.render(text1, True, color1),
                          (self.input_box1.x + 10, self.input_box1.y + 8))
 
-        # ===== 玩家2（仅PVP）=====
+        # ===== player2（PVP）=====
         if self.mode == "pvp":
-            # ===== 输入框阴影 =====
             shadow = self.input_box2.move(0, 3)
             shadow_surf = pygame.Surface((self.input_box2.width, self.input_box2.height), pygame.SRCALPHA)
             pygame.draw.rect(shadow_surf, UI_SHADOW, shadow_surf.get_rect(), border_radius=10)
             self.screen.blit(shadow_surf, shadow)
 
-            # ===== 输入框 =====
             border_color = UI_ACCENT if self.input_active == 1 else UI_BORDER
             pygame.draw.rect(self.screen, UI_PANEL, self.input_box2, border_radius=10)
             pygame.draw.rect(self.screen, border_color, self.input_box2, 2, border_radius=10)
@@ -260,10 +250,9 @@ class GomokuGUI:
             self.screen.blit(self.font.render(text2, True, color2),
                              (self.input_box2.x + 10, self.input_box2.y + 8))
 
-        # ===== 确认按钮 =====
         self.draw_button(self.confirm_btn, "Start Game")
 
-    # ================== 棋盘 ==================
+    # ================== checkerboard ==================
     def draw_board(self):
         self.screen.fill(BOARD_COLOR)
 
@@ -295,13 +284,11 @@ class GomokuGUI:
     # ================== UI ==================
     def draw_ui(self):
         panel = pygame.Rect(0, SCREEN_SIZE, SCREEN_SIZE, BOTTOM_PANEL)
-        # 阴影
         shadow = panel.move(0, -3)
         shadow_surf = pygame.Surface((panel.width, panel.height), pygame.SRCALPHA)
         pygame.draw.rect(shadow_surf, UI_SHADOW, shadow_surf.get_rect(), border_radius=12)
         self.screen.blit(shadow_surf, shadow)
 
-        # 卡片
         pygame.draw.rect(self.screen, UI_PANEL, panel, border_radius=12)
 
         score = f"{self.player1_name} {self.score_p1} : {self.score_p2} {self.player2_name}"
@@ -311,7 +298,7 @@ class GomokuGUI:
         self.draw_button(self.restart_btn, "Restart")
         self.draw_button(self.undo_btn, "Undo")
 
-    # ================== 弹窗 ==================
+    # ================== pop-up window ==================
     def draw_popup(self):
         overlay = pygame.Surface((SCREEN_SIZE, SCREEN_SIZE))
         overlay.set_alpha(150)
@@ -319,13 +306,11 @@ class GomokuGUI:
         self.screen.blit(overlay, (0, 0))
 
         rect = pygame.Rect(150, 200, 300, 200)
-        # 阴影
         shadow = rect.move(0, 6)
         shadow_surf = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
         pygame.draw.rect(shadow_surf, UI_SHADOW, shadow_surf.get_rect(), border_radius=16)
         self.screen.blit(shadow_surf, shadow)
 
-        # 卡片
         pygame.draw.rect(self.screen, UI_PANEL, rect, border_radius=16)
 
         self.screen.blit(self.font.render(self.winner_text, True, UI_TEXT), (rect.x + 60, rect.y + 50))
@@ -333,7 +318,7 @@ class GomokuGUI:
         self.next_btn = pygame.Rect(rect.x + 100, rect.y + 120, 100, 40)
         self.draw_button(self.next_btn, "Next game")
 
-    # ================== 设置 ==================
+    # ================== settings ==================
     def draw_settings(self):
         overlay = pygame.Surface((SCREEN_SIZE, SCREEN_SIZE))
         overlay.set_alpha(120)
@@ -367,7 +352,6 @@ class GomokuGUI:
 
         rankings = self.ranking.get_ranking()
 
-        # ===== 卡片 =====
         rect = pygame.Rect(80, 120, SCREEN_SIZE - 160, 360)
 
         shadow = rect.move(0, 6)
@@ -377,7 +361,6 @@ class GomokuGUI:
 
         pygame.draw.rect(self.screen, UI_PANEL, rect, border_radius=16)
 
-        # ===== ⭐ 列宽设计（关键）=====
         col_widths = [60, 140, 70, 70, 100]
         start_x = rect.x + 20
 
@@ -387,13 +370,11 @@ class GomokuGUI:
             x_positions.append(cur_x)
             cur_x += w
 
-        # ===== 表头 =====
         headers = ["Rank", "Name", "Wins", "Games", "Rate"]
 
         for i, h in enumerate(headers):
             self.draw_text_clipped(h, x_positions[i], rect.y + 20, col_widths[i])
 
-        # ===== 数据 =====
         y = rect.y + 60
         for i, (name, win, games, rate) in enumerate(rankings[:10]):
 
@@ -410,7 +391,6 @@ class GomokuGUI:
 
             y += 30
 
-        # ===== 返回按钮 =====
         self.rank_back_btn = pygame.Rect(220, 520, 160, 50)
         self.draw_button(self.rank_back_btn, "Back")
 
@@ -418,12 +398,10 @@ class GomokuGUI:
         font = self.font
         rendered = font.render(text, True, UI_TEXT)
 
-        # 如果没超宽，直接画
         if rendered.get_width() <= max_width:
             self.screen.blit(rendered, (x, y))
             return
 
-        # 超宽 → 截断 + ...
         while len(text) > 0:
             text = text[:-1]
             rendered = font.render(text + "...", True, UI_TEXT)
@@ -431,7 +409,7 @@ class GomokuGUI:
                 self.screen.blit(rendered, (x, y))
                 return
 
-    # ================== 逻辑（不变） ==================
+    # ================== logic ==================
     def handle_click(self, pos):
         if self.game_over:
             return False
@@ -485,7 +463,7 @@ class GomokuGUI:
 
             self.current_player = 1
 
-    # ================== 主循环 ==================
+    # ================== Main loop ==================
     def run(self):
         while True:
             if self.state == "menu":
@@ -538,7 +516,6 @@ class GomokuGUI:
                             self.state = "menu"
 
                 elif self.state == "input":
-                    # ⭐ 鼠标点击（切换输入框 or 点击确认）
                     if event.type == pygame.MOUSEBUTTONDOWN:
                         if self.input_box1.collidepoint(event.pos):
                             self.input_active = 1
@@ -546,7 +523,6 @@ class GomokuGUI:
                             self.input_active = 2
                         elif self.confirm_btn.collidepoint(event.pos):
 
-                            # ===== 默认值处理 =====
                             if self.mode == "pve":
                                 self.player1_name = self.input_text1 if self.input_text1 else "Player"
                                 self.player2_name = "AI"
@@ -556,7 +532,6 @@ class GomokuGUI:
 
                             self.state = "game"
 
-                    # ⭐ 键盘输入
                     elif event.type == pygame.KEYDOWN:
                         if event.key == pygame.K_BACKSPACE:
                             if self.input_active == 1:
